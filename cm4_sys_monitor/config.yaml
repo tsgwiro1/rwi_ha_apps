@@ -1,0 +1,40 @@
+name: "CM4 System Monitor"
+description: "Überwachung für Waveshare CM4-POE-UPS-BASE Board (Lüfter & USV) über I2C"
+version: "2.0.0"
+slug: "cm4_sys_monitor"
+init: false
+arch:
+  - aarch64
+  - amd64
+log_level: info
+startup: services
+privileged:
+  - SYS_ADMIN
+devices:
+  - /dev/i2c-1
+  - /dev/i2c-10
+device_tree: true
+schema:
+  hostname: str
+  port: int
+  username: str
+  password: str
+  interval: int
+  devicename: str
+  clientid: "str?"
+  fanmintemp: int
+  fanmaxtemp: int
+  bat_v: bool
+  bat_percent: bool
+  bat_curr: bool
+  fan_speed: bool
+options:
+  port: 1883
+  interval: 60
+  devicename: cm4_sys_mon
+  fanmintemp: 45
+  fanmaxtemp: 60
+  bat_v: true
+  bat_percent: true
+  bat_curr: true
+  fan_speed: true
