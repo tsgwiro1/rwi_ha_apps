@@ -2,6 +2,12 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [2.0.1] - 2026-04-20
+### Geändert
+- **Optimierte Lüftersteuerung:** Der Lüfter schaltet sich nun komplett ab (0 % PWM), solange die CPU-Temperatur unterhalb der konfigurierten `fanmintemp` liegt.
+- **Kickstart-Funktion:** Um die mechanische Trägheit (das Losbrechmoment) zu überwinden, startet der Lüfter aus dem Stillstand nun mit einem kurzen Kickstart (100 % für 0,5 Sekunden), bevor er auf die Zielgeschwindigkeit regelt.
+- **Angepasste Mindestdrehzahl:** Der Regelbereich beginnt nun bei schonenden 20 % statt 30 %, um das System bei leichter Last noch leiser zu machen.
+
 ## [2.0.0] - 2026-04-20
 ### Hinzugefügt
 - Native Home Assistant UI-Konfiguration: Sensoren können nun direkt über die Add-on Optionen an- und abgeschaltet werden (Wegfall der `settings.yaml`).
