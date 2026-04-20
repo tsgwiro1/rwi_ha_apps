@@ -1,5 +1,5 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+ARG BUILD_ARCH
+FROM ghcr.io/home-assistant/${BUILD_ARCH}-base:latest
 
 # Alles nativ über Alpine Linux installieren
 RUN apk add --no-cache \
@@ -8,11 +8,10 @@ RUN apk add --no-cache \
     py3-yaml \
     py3-smbus
 
-# Skripte kopieren (i2c_pkg und sensors.py fallen komplett weg!)
+# Skripte kopieren
 COPY usv_status.py /
 COPY fan.py /
 COPY system_sensors.py /
-COPY settings.yaml /
 COPY run.sh /
 RUN chmod a+x /run.sh
 
