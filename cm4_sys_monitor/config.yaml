@@ -29,6 +29,8 @@ schema:
   bat_percent: bool
   bat_curr: bool
   fan_speed: bool
+  low_bat_warning: float(1.8,4.2)
+  fan_hysteresis: float(0.5,10.0)
 options:
   port: 1883
   interval: 60
@@ -39,3 +41,5 @@ options:
   bat_percent: true
   bat_curr: true
   fan_speed: true
+  low_bat_warning: 2.5
+  fan_hysteresis: 2.0
