@@ -2,6 +2,17 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [2.0.2] - 2026-04-22
+### Hinzugefügt
+- Dynamisches Loglevel (INFO/DEBUG) über HA-Konfiguration einstellbar.
+- Konfigurierbare Hysterese für den Lüfter (Standard: 2.0°C).
+- Konfigurierbare Batterie-Warnschwelle (`low_bat_warning`).
+- Ausführliches Logging in allen Hardware-Treibern.
+
+### Geändert
+- **Intelligenter Kickstart:** Erfolgt nur noch, wenn der Lüfter physisch steht (RPM < 50).
+- Umbenennung interner Variablen für bessere Lesbarkeit.
+
 ## [2.0.1] - 2026-04-20
 ### Geändert
 - **Optimierte Lüftersteuerung:** Der Lüfter schaltet sich nun komplett ab (0 % PWM), solange die CPU-Temperatur unterhalb der konfigurierten `fanmintemp` liegt.

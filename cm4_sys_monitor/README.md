@@ -1,18 +1,18 @@
 # CM4 System Monitor für Home Assistant
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-blue.svg)]()
+[![Version: 2.0.2](https://img.shields.io/badge/Version-2.0.2-blue.svg)]()
 
-Dieses Home Assistant Add-on überwacht die Hardware eines Raspberry Pi Compute Module 4 (CM4) in Kombination mit einem IO-Board (z. B. Waveshare CM4-POE-UPS-BASE). Es liest Sensordaten via I2C aus, steuert den Lüfter temperaturbasiert und sendet alle relevanten Statusdaten (Batteriespannung, Strom, Lüfter-RPM) per MQTT an Home Assistant.
+Dieses Home Assistant Add-on überwacht die Hardware eines Raspberry Pi Compute Module 4 (CM4) in Kombination mit einem IO-Board (z. B. Waveshare CM4-POE-UPS-BASE). Es liest Sensordaten via I2C aus, steuert den Lüfter intelligent und sendet alle relevanten Statusdaten (Batteriespannung, Strom, Lüfter-RPM) per MQTT an Home Assistant.
 
 Dank MQTT Auto-Discovery werden alle Sensoren in Home Assistant automatisch als Geräte angelegt – es ist kein manuelles YAML-Schreiben in der Home Assistant Konfiguration nötig!
 
 ## 🌟 Features
 
 - **USV Überwachung:** Auslesen des INA219 Chips für Batteriespannung (V), aktuellen Stromverbrauch (mA) und errechneten Batteriestand (%).
-- **Lüftersteuerung:** Automatische, stufenlose Anpassung der Lüftergeschwindigkeit (EMC2301 Chip) basierend auf der aktuellen CPU-Temperatur.
+- **Intelligente Lüftersteuerung:** Automatische, stufenlose Anpassung der Geschwindigkeit (EMC2301 Chip). Inklusive intelligenter Kickstart-Funktion (nur bei Stillstand) und konfigurierbarer Hysterese, um ständiges Ein- und Ausschalten zu verhindern.
 - **Ressourcenschonend:** Komplett natives Alpine-Linux Docker Image mit direkter I2C-Ansprache via `smbus` (ohne teure Subprozesse).
-- **Home Assistant UI:** Alle Sensoren können direkt in der Add-on Konfigurationsoberfläche einzeln aktiviert oder deaktiviert werden.
+- **Home Assistant UI:** Alle Sensoren und Parameter können bequem über die Add-on Optionen konfiguriert werden.
 
 ## 🛠️ Voraussetzungen
 
@@ -35,24 +35,28 @@ Nach der Installation musst du das Add-on im Reiter **Konfiguration** anpassen:
 
 | Option | Typ | Beschreibung | Standardwert |
 | :--- | :--- | :--- | :--- |
-| `hostname` | String | Die IP-Adresse oder der Hostname deines MQTT Brokers (z.B. `core-mosquitto`). | - |
+| `hostname` | String | Die IP-Adresse oder Hostname deines MQTT Brokers. | `core-mosquitto` |
 | `port` | Integer | Der Port deines MQTT Brokers. | `1883` |
 | `username` | String | Der Benutzername für den MQTT Broker. | - |
 | `password` | String | Das Passwort für den MQTT Broker. | - |
+| `devicename` | String | Interner Name für das MQTT Gerät. | `CM4 System Monitor` |
+| `clientid` | String | Eindeutige MQTT Client ID. | `cm4_monitor` |
+| `fanmintemp` | Integer | CPU Temp (°C), ab der der Lüfter anläuft (Minimaldrehzahl 20%). | `45` |
+| `fanmaxtemp` | Integer | CPU Temp (°C), bei der der Lüfter auf 100% dreht. | `55` |
 | `interval` | Integer | Zeit in Sekunden zwischen den Sensor-Updates. | `60` |
-| `devicename` | String | Interner Name für das MQTT Gerät. | `cm4_sys_mon` |
-| `clientid` | String | Eindeutige MQTT Client ID. | - |
-| `fanmintemp` | Integer | CPU Temperatur (°C), ab der der Lüfter anläuft. | `35` |
-| `fanmaxtemp` | Integer | CPU Temperatur (°C), bei der der Lüfter auf 100% dreht. | `50` |
-| `bat_v`, `bat_percent`, etc. | Boolean | Schalter zum Aktivieren/Deaktivieren einzelner Sensoren. | `true` |
+| `bat_v`, `bat_percent`... | Boolean | Schalter zum Aktivieren/Deaktivieren einzelner Sensoren. | `true` |
+| `log_level` | Dropdown | Detailgrad der Protokolle. `info` für Normalbetrieb, `debug` für detaillierte Fehlersuche und Live-Analyse. | `info` |
+| `low_bat_warning` | Float | Spannung (V), ab der eine Batteriewarnung ins Protokoll geschrieben wird. | `3.0` |
+| `fan_hysteresis` | Float | Pufferzone in °C. Verhindert, dass der Lüfter an der Temperaturgrenze ständig an- und ausgeht. | `2.0` |
 
 Speichere die Konfiguration, aktiviere "Beim Booten starten" (Start on boot) sowie "Watchdog" und starte das Add-on!
 
 ## 🐞 Fehlerbehebung / Logs
 
-Wenn keine Daten in Home Assistant ankommen:
-1. Prüfe den Reiter **Protokolle** im Add-on. Steht dort `MQTT verbunden`? Falls nein, prüfe deine MQTT-Zugangsdaten.
-2. Tauchen I2C-Fehler im Log auf? Stelle sicher, dass I2C in deinem Host-System korrekt aktiviert ist und die Hardware-Adressen (Standard: Bus 10, Addr 0x43 & 0x2f) stimmen.
+Wenn sich das System unerwartet verhält oder keine Daten ankommen:
+1. Stelle den `log_level` in der Konfiguration auf `debug` und starte das Add-on neu.
+2. Prüfe den Reiter **Protokolle**. Dort siehst du nun jeden einzelnen Entscheidungsschritt des Skripts (z. B. warum der Lüfter gerade läuft oder nicht) sowie detaillierte I2C- und MQTT-Meldungen.
+3. Vergiss nicht, das Loglevel nach der Fehlersuche wieder auf `info` zurückzustellen, um das System zu entlasten.
 
 ## 📄 Lizenz
 
