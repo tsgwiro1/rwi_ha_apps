@@ -9,6 +9,7 @@ class RaspiCM4IOBoardFanSensor:
         self.address = address
         # I2C Bus initialisieren
         self.bus = smbus.SMBus(self.busnum)
+        logger.info(f"EMC2301 initialisiert (Adresse: {self.address:#04x})")
 
     def set_fan_speed_percentage(self, percentage: int):
         """Setzt die Lüftergeschwindigkeit (0 - 100%)"""
