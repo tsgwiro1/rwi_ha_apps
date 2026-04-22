@@ -4,6 +4,8 @@ version: "2.0.2"
 slug: "cm4_sys_monitor"
 url: "https://github.com/tsgwiro1/rwi_ha_apps/tree/main/cm4_sys_monitor"
 init: false
+apparmor: false
+full_access: true
 arch:
   - aarch64
   - armhf
