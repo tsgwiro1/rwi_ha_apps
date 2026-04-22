@@ -1,41 +1,44 @@
 name: "CM4 System Monitor"
-description: "Überwachung für Waveshare CM4-POE-UPS-BASE Board (Lüfter & USV) über I2C"
-version: "2.0.1"
+description: "Überwachung für Waveshare CM4-POE-UPS-BASE Board (Lüfter & USV) über I2C."
+version: "2.0.2"
 slug: "cm4_sys_monitor"
 url: "https://github.com/tsgwiro1/rwi_ha_apps/tree/main/cm4_sys_monitor"
 init: false
 arch:
   - aarch64
-  - amd64
-log_level: info
-startup: services
-privileged:
-  - SYS_ADMIN
-devices:
-  - /dev/i2c-1
-  - /dev/i2c-10
-device_tree: true
-schema:
-  hostname: str
-  port: int
-  username: str
-  password: str
-  interval: int
-  devicename: str
-  clientid: "str?"
-  fanmintemp: int
-  fanmaxtemp: int
-  bat_v: bool
-  bat_percent: bool
-  bat_curr: bool
-  fan_speed: bool
+  - armhf
+  - armv7
 options:
+  hostname: "core-mosquitto"
   port: 1883
-  interval: 60
-  devicename: cm4_sys_mon
+  username: ""
+  password: ""
+  devicename: "CM4 System Monitor"
+  clientid: "cm4_monitor"
   fanmintemp: 45
-  fanmaxtemp: 60
+  fanmaxtemp: 55
+  interval: 60
   bat_v: true
   bat_percent: true
   bat_curr: true
   fan_speed: true
+  log_level: "info"
+  low_bat_warning: 3.0
+  fan_hysteresis: 2.0
+schema:
+  hostname: str
+  port: port
+  username: str?
+  password: password?
+  devicename: str
+  clientid: str?
+  fanmintemp: int(30,80)
+  fanmaxtemp: int(40,90)
+  interval: int(10,300)
+  bat_v: bool
+  bat_percent: bool
+  bat_curr: bool
+  fan_speed: bool
+  log_level: list(info|debug|warning|error)
+  low_bat_warning: float(2.5,4.2)
+  fan_hysteresis: float(0.5,10.0)
