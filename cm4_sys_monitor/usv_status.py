@@ -7,6 +7,7 @@ class INA219:
     def __init__(self, bus=10, addr=0x43, low_bat_warning=3.0):
         self.addr = addr
         self.low_bat_warning = low_bat_warning
+        logger.info(f"INA219 initialisiert (Warnschwelle: {self.low_bat_warning}V)")
         try:
             self.bus = smbus.SMBus(bus)
             # Kalibrierung für 16V / 5A (Werte aus deinem alten Code)

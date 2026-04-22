@@ -140,15 +140,13 @@ class SystemMonitor:
                             time.sleep(0.5)
                         else:
                             logger.debug(f"Entscheidung: Überspringe Kickstart, Lüfter dreht bereits mit {current_rpm} RPM.")
-                        self.fan_is_on = True
-                    
-                    self.fan.set_fan_speed_percentage(int(pwm))
-                    
+                        self.fan_is_on = True                    
                 else:
                     logger.debug("Status: Temperatur in der Hysterese-Zone.")
                     if self.fan_is_on:
                         logger.debug("Aktion: Lüfter war an -> lasse ihn auf Minimalstufe (20%) weiterlaufen.")
-                        self.fan.set_fan_speed_percentage(20)
+                        pwm = 20
+                self.fan.set_fan_speed_percentage(int(pwm))
 
                 # --- Sensordaten sammeln ---
                 payload = {}
