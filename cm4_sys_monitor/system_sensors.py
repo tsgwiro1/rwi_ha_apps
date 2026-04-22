@@ -147,6 +147,7 @@ class SystemMonitor:
                         logger.debug("Aktion: Lüfter war an -> lasse ihn auf Minimalstufe (20%) weiterlaufen.")
                         pwm = 20
                 self.fan.set_fan_speed_percentage(int(pwm))
+                logger.debug(f"Setze Fan PWM = {int(pwm)}%")
 
                 # --- Sensordaten sammeln ---
                 payload = {}
