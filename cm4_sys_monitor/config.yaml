@@ -29,6 +29,7 @@ schema:
   bat_percent: bool
   bat_curr: bool
   fan_speed: bool
+  log_level: list(info|debug|warning|error)
   low_bat_warning: float(1.8,4.2)
   fan_hysteresis: float(0.5,10.0)
 options:
@@ -41,5 +42,6 @@ options:
   bat_percent: true
   bat_curr: true
   fan_speed: true
+  log_level: "info"
   low_bat_warning: 2.5
   fan_hysteresis: 2.0
