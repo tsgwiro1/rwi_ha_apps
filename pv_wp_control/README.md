@@ -10,6 +10,12 @@ Dank MQTT Auto-Discovery werden alle Sensoren und Steuerelemente in Home Assista
 
 ---
 
+## ⚠️ Haftungsausschluss
+
+Diese Software steuert eine Wärmepumpe über Modbus TCP. Unsachgemässe Konfiguration kann zu Schäden an der Anlage führen. Die Nutzung erfolgt auf eigene Verantwortung. Der Autor übernimmt keinerlei Haftung für Schäden, die durch die Nutzung dieser Software entstehen. Vor der Inbetriebnahme sind die Sicherheitseinstellungen der Wärmepumpe (Hochdruck, Übertemperatur, Schaltspielschutz, usw.) zu prüfen.
+
+---
+
 ## 🌟 Features
 
 - **Vollautomatische PV-Überschusssteuerung:** Startet die WP bei Solarüberschuss und stoppt bei Bewölkung mit konfigurierbarer Verzögerung
