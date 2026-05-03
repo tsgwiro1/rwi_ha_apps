@@ -1,0 +1,50 @@
+name: "PV Wärmepumpen Steuerung"
+description: "PV-Überschusssteuerung für Alpha Innotec WP über Modbus TCP (SHI)"
+version: "1.0.3"
+slug: "pv_wp_control"
+url: "https://github.com/your-repo/pv-wp-control"
+init: false
+arch:
+  - aarch64
+startup: services
+homeassistant_api: true
+
+schema:
+  mqtt_host: str
+  mqtt_port: int
+  mqtt_user: str
+  mqtt_password: str
+  wp_ip: str
+  wp_port: int
+  wp_slave_id: int
+  ha_entity_pv_surplus: str
+  modbus_refresh_s: int
+  measurement_interval_s: int
+  startup_no_limit_s: int
+  wp_min_standzeit_min: int
+  modbus_retry_delay_s: int
+  ha_connection_timeout_min: int
+  max_absolute_temperature: float
+  mqtt_topic_prefix: str
+  mqtt_discovery_prefix: str
+  log_level: list(debug|info|warning|error)
+
+options:
+  mqtt_host: "core-mosquitto"
+  mqtt_port: 1883
+  mqtt_user: ""
+  mqtt_password: ""
+  wp_ip: "192.168.0.175"
+  wp_port: 502
+  wp_slave_id: 1
+  ha_entity_pv_surplus: "sensor.solar_surplus_power"
+  modbus_refresh_s: 60
+  measurement_interval_s: 15
+  startup_no_limit_s: 300
+  wp_min_standzeit_min: 20
+  modbus_retry_delay_s: 30
+  ha_connection_timeout_min: 5
+  max_absolute_temperature: 60.0
+  mqtt_topic_prefix: "pvwp"
+  mqtt_discovery_prefix: "homeassistant"
+  log_level: "info"

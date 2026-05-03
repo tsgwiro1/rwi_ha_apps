@@ -1,0 +1,55 @@
+configuration:
+  mqtt_host:
+    name: MQTT Broker Adresse
+    description: IP-Adresse oder Hostname des MQTT Brokers
+  mqtt_port:
+    name: MQTT Port
+    description: Port des MQTT Brokers
+  mqtt_user:
+    name: MQTT Benutzername
+    description: Benutzername für die MQTT Authentifizierung
+  mqtt_password:
+    name: MQTT Passwort
+    description: Passwort für die MQTT Authentifizierung
+  wp_ip:
+    name: Wärmepumpe IP-Adresse
+    description: IP-Adresse der Luxtronik Steuerung
+  wp_port:
+    name: Wärmepumpe Modbus Port
+    description: Modbus TCP Port (Standard 502)
+  wp_slave_id:
+    name: Modbus Slave ID
+    description: Slave ID der Wärmepumpe (Standard 1)
+  ha_entity_pv_surplus:
+    name: PV-Überschuss Entity
+    description: HA Entity-ID die den PV-Überschuss in Watt liefert
+  modbus_refresh_s:
+    name: Modbus Schreibintervall
+    description: Wie oft Register geschrieben werden (Sekunden)
+  measurement_interval_s:
+    name: Messintervall
+    description: Wie oft Sensoren gelesen werden (Sekunden)
+  startup_no_limit_s:
+    name: Anlauf-Timeout
+    description: Maximale Wartezeit auf Kompressorstart (Sekunden)
+  wp_min_standzeit_min:
+    name: Technische Mindest-Standzeit
+    description: Minimale Pause zwischen Kompressorstarts (Minuten)
+  modbus_retry_delay_s:
+    name: Modbus Retry Verzögerung
+    description: Wartezeit vor erneutem Verbindungsversuch (Sekunden)
+  ha_connection_timeout_min:
+    name: HA Verbindungs-Timeout
+    description: Max. Dauer ohne HA-Daten bevor Abschaltung (Minuten)
+  max_absolute_temperature:
+    name: NOTAUS Temperatur
+    description: Absolute Maximaltemperatur für Notabschaltung (°C)
+  mqtt_topic_prefix:
+    name: MQTT Topic Prefix
+    description: Prefix für alle MQTT Topics
+  mqtt_discovery_prefix:
+    name: MQTT Discovery Prefix
+    description: Prefix für HA Auto-Discovery
+  log_level:
+    name: Log-Level
+    description: Detailgrad der Protokollierung

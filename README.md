@@ -29,6 +29,15 @@ Ein ressourcenschonendes, natives Add-on zur Überwachung eines Raspberry Pi Com
 
 ---
 
+### [☀️ PV Wärmepumpen Steuerung](./pv_wp_control)
+Ein intelligentes Add-on zur PV-Überschusssteuerung einer Alpha Innotec Wärmepumpe (Luxtronik 2.1) über Modbus TCP.
+* **PV-Überschusssteuerung:** Startet die Wärmepumpe automatisch bei Solarüberschuss und lädt den Kombispeicher über den Heizbetrieb.
+* **Leistungsbegrenzung:** Dynamisches Soft Limit folgt dem PV-Überschuss in Echtzeit.
+* **Kompressor-Überwachung:** Erkennt externe Starts/Stopps (Warmwasser, Abtauen, EVU-Sperre) und reagiert intelligent.
+* **Auto-Discovery:** Alle Sensoren und Steuerelemente werden vollautomatisch als Entitäten via MQTT im Home Assistant angelegt.
+
+---
+
 ## 📄 Lizenz
 
 Alle Add-ons in diesem Repository stehen unter der [MIT-Lizenz](LICENSE), sofern im jeweiligen Unterordner nicht anders angegeben. Du kannst den Code gerne für deine eigenen Projekte nutzen, anpassen und weiterentwickeln.

@@ -1,0 +1,196 @@
+title: PV Wärmepumpen Steuerung
+views:
+  - title: Übersicht
+    path: pvwp
+    icon: mdi:heat-pump
+    cards:
+      # === STATUS ===
+      - type: entities
+        title: "⚙️ Status"
+        show_header_toggle: false
+        entities:
+          - entity: select.pvwp_mode
+            name: Betriebsmodus
+          - entity: sensor.pvwp_state
+            name: Zustand
+          - entity: sensor.pvwp_runtime
+            name: Laufzeit
+          - entity: sensor.pvwp_cooldown
+            name: Standzeit verbleibend
+          - entity: binary_sensor.pvwp_wp_running
+            name: Kompressor
+          - entity: binary_sensor.pvwp_modbus_connected
+            name: Modbus Verbindung
+
+      # === LEISTUNG ===
+      - type: glance
+        title: "⚡ Leistung"
+        columns: 3
+        show_state: true
+        entities:
+          - entity: sensor.pvwp_pv_surplus
+            name: PV Überschuss
+          - entity: sensor.pvwp_power_consumption
+            name: WP Aufnahme
+          - entity: sensor.pvwp_heat_output
+            name: Heizleistung
+          - entity: sensor.pvwp_cop
+            name: COP
+          - entity: sensor.pvwp_active_limit
+            name: Aktives Limit
+          - entity: sensor.pvwp_energy_today
+            name: Energie heute
+
+      # === SPEICHER ===
+      - type: gauge
+        entity: sensor.pvwp_rl_extern
+        name: Speichertemperatur
+        unit: "°C"
+        min: 20
+        max: 60
+        needle: true
+        severity:
+          green: 20
+          yellow: 45
+          red: 55
+
+      - type: entities
+        title: "🌡️ Temperaturen"
+        entities:
+          - entity: sensor.pvwp_rl_extern
+            name: Speicher (RL extern)
+          - entity: sensor.pvwp_rl_soll
+            name: Sollwert (an WP)
+          - entity: number.pvwp_max_temperature
+            name: Maximum
+
+      # === EINSTELLUNGEN ===
+      - type: entities
+        title: "🔧 Einstellungen"
+        show_header_toggle: false
+        entities:
+          - entity: number.pvwp_offset
+            name: Offset
+          - entity: number.pvwp_min_surplus
+            name: Min. PV Überschuss
+          - entity: number.pvwp_shutdown_delay
+            name: Ausschaltverzögerung
+          - entity: number.pvwp_min_standzeit
+            name: Min. Standzeit
+          - entity: number.pvwp_max_temperature
+            name: Max. Speichertemperatur
+          - entity: number.pvwp_min_power
+            name: Min. Leistung
+
+      # === GRAPH: Leistung & COP ===
+      - type: custom:apexcharts-card
+        header:
+          title: Leistung & COP (24h)
+          show: true
+        graph_span: 24h
+        span:
+          end: now
+        yaxis:
+          - id: power
+            min: 0
+            max: 3000
+            apex_config:
+              title:
+                text: "Leistung (W)"
+          - id: cop
+            min: 0
+            max: 8
+            opposite: true
+            apex_config:
+              title:
+                text: "COP"
+        series:
+          - entity: sensor.pvwp_pv_surplus
+            name: PV Überschuss
+            color: "#FFC107"
+            yaxis_id: power
+            type: area
+            opacity: 0.2
+            stroke_width: 1
+          - entity: sensor.pvwp_power_consumption
+            name: WP Aufnahme
+            color: "#4CAF50"
+            yaxis_id: power
+            type: line
+            stroke_width: 2
+          - entity: sensor.pvwp_active_limit
+            name: Soft Limit
+            color: "#F44336"
+            yaxis_id: power
+            type: line
+            stroke_width: 1
+            curve: stepline
+          - entity: sensor.pvwp_cop
+            name: COP
+            color: "#2196F3"
+            yaxis_id: cop
+            type: line
+            stroke_width: 2
+            stroke_dash: 4
+
+      # === GRAPH: Temperaturen ===
+      - type: custom:apexcharts-card
+        header:
+          title: Speichertemperatur (24h)
+          show: true
+        graph_span: 24h
+        span:
+          end: now
+        yaxis:
+          - id: temp
+            min: 20
+            max: 60
+            apex_config:
+              title:
+                text: "Temperatur (°C)"
+        series:
+          - entity: sensor.pvwp_rl_extern
+            name: Speicher (RL extern)
+            color: "#2196F3"
+            yaxis_id: temp
+            type: area
+            opacity: 0.15
+            stroke_width: 2
+          - entity: sensor.pvwp_rl_soll
+            name: Sollwert
+            color: "#FF9800"
+            yaxis_id: temp
+            type: line
+            stroke_width: 1
+            curve: stepline
+
+      # === GRAPH: State Timeline ===
+      - type: custom:apexcharts-card
+        header:
+          title: Betriebszustand (24h)
+          show: true
+        graph_span: 24h
+        span:
+          end: now
+        series:
+          - entity: sensor.pvwp_state
+            type: column
+            color: "#4CAF50"
+            group_by:
+              func: raw
+              duration: 5min
+
+      # === HISTORY ===
+      - type: history-graph
+        title: "📈 Verlauf (native)"
+        hours_to_show: 24
+        entities:
+          - entity: sensor.pvwp_power_consumption
+            name: WP Leistung
+          - entity: sensor.pvwp_pv_surplus
+            name: PV Überschuss
+          - entity: sensor.pvwp_rl_extern
+            name: Speichertemp
+          - entity: sensor.pvwp_state
+            name: Zustand
+

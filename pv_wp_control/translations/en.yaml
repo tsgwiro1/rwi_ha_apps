@@ -1,0 +1,55 @@
+configuration:
+  mqtt_host:
+    name: MQTT Broker Address
+    description: IP address or hostname of the MQTT broker
+  mqtt_port:
+    name: MQTT Port
+    description: Port of the MQTT broker
+  mqtt_user:
+    name: MQTT Username
+    description: Username for MQTT authentication
+  mqtt_password:
+    name: MQTT Password
+    description: Password for MQTT authentication
+  wp_ip:
+    name: Heat Pump IP Address
+    description: IP address of the Luxtronik controller
+  wp_port:
+    name: Heat Pump Modbus Port
+    description: Modbus TCP port (default 502)
+  wp_slave_id:
+    name: Modbus Slave ID
+    description: Slave ID of the heat pump (default 1)
+  ha_entity_pv_surplus:
+    name: PV Surplus Entity
+    description: HA entity ID providing PV surplus in Watts
+  modbus_refresh_s:
+    name: Modbus Write Interval
+    description: How often registers are written (seconds)
+  measurement_interval_s:
+    name: Measurement Interval
+    description: How often sensors are read (seconds)
+  startup_no_limit_s:
+    name: Startup Timeout
+    description: Maximum wait time for compressor start (seconds)
+  wp_min_standzeit_min:
+    name: Technical Minimum Standstill
+    description: Minimum pause between compressor starts (minutes)
+  modbus_retry_delay_s:
+    name: Modbus Retry Delay
+    description: Wait time before reconnection attempt (seconds)
+  ha_connection_timeout_min:
+    name: HA Connection Timeout
+    description: Max duration without HA data before shutdown (minutes)
+  max_absolute_temperature:
+    name: Emergency Shutdown Temperature
+    description: Absolute maximum temperature for emergency shutdown (°C)
+  mqtt_topic_prefix:
+    name: MQTT Topic Prefix
+    description: Prefix for all MQTT topics
+  mqtt_discovery_prefix:
+    name: MQTT Discovery Prefix
+    description: Prefix for HA auto-discovery
+  log_level:
+    name: Log Level
+    description: Detail level of logging
