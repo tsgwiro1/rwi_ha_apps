@@ -1,7 +1,7 @@
 # CM4 System Monitor für Home Assistant
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 2.0.2](https://img.shields.io/badge/Version-2.0.2-blue.svg)]()
+[![Version: 2.0.3](https://img.shields.io/badge/Version-2.0.3-blue.svg)]()
 
 Dieses Home Assistant Add-on überwacht die Hardware eines Raspberry Pi Compute Module 4 (CM4) in Kombination mit einem IO-Board (z. B. Waveshare CM4-POE-UPS-BASE). Es liest Sensordaten via I2C aus, steuert den Lüfter intelligent und sendet alle relevanten Statusdaten (Batteriespannung, Strom, Lüfter-RPM) per MQTT an Home Assistant.
 

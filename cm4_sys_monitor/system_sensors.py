@@ -170,6 +170,8 @@ class SystemMonitor:
                 # Immer mitsenden
                 payload["cpu_temp"] = cpu_temp
 
+                logger.debug(f"MQTT Payload gesammelt: {payload}")
+
                 # Daten via MQTT publizieren
                 if payload:
                     self.client.publish(
