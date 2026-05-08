@@ -351,16 +351,25 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | IR10002 | 0-7 | Betriebsart (0=Heizen, 1=WW, 4=Abtauen, 5=Keine) |
 | IR10000 | Bitfeld | WP Status (Bit 0 = Kompressor) |
 
-### Wichtige Erkenntnisse aus den Tests
+### Betriebsparameter & Hinweise
+
+Die folgenden Parameter basieren auf Herstellerangaben sowie eigenen Erkenntnissen aus der Integration.
+
+#### Herstellervorgaben
+
+| Thema | Detail | Quelle |
+|---|---|---|
+| Anlaufleistung & Soft Limit | Der Verdichter startet nicht, wenn die benötigte Anlaufleistung über dem eingestellten Soft Limit (HR10041) liegt. **Abhilfe:** Entweder HR10041 höher setzen, um die Anlaufleistung abzudecken, oder erst starten und das Limit anschliessend nachsetzen. | Hersteller (Mail) |
+| Rücklauf-/Vorlaufbegrenzung | Konfigurierbar über Bedienteil: *Service → Einstellungen → Temperaturen* (Installateurenzugang erforderlich). Werkseinstellung: 50°C. Erhöhung auf 55–60°C vom Hersteller freigegeben. Max. Vorlauf ca. 70°C (wird je nach Bedingungen dynamisch nach unten angepasst). Max. Rücklauf liegt ca. 4–8°C unter dem Vorlauf. ⚠️ Höhere Temperaturen bedeuten höhere Belastung der WP. | Hersteller (Mail) |
+| Mindestleistung Kompressor | Die minimale Leistung ist abhängig von Wärmequelle und Vorlauftemperatur. Siehe Leistungskurve Pe min/max in der Bedienungsanleitung. | Bedienungsanleitung, Anhang S. 21 |
+| Register-Timeout (15 Min) | Der Modbus-Client setzt alle empfangenen Daten nach 15 Min ohne jegliche Anfrage vom Master auf Standardeinstellung zurück. **Wichtig:** Jede Anfrage (auch Lesezugriffe/Polling) setzt den Timer zurück – solange das System Register liest, bleiben geschriebene Werte erhalten. | Betriebsanleitung SHI Modbus TCP, Kap. 3 |
+
+#### Erkenntnisse aus der Integration
 
 | Thema | Detail |
 |---|---|
-| Anlauf ohne Limit | WP startet NICHT wenn beim Einschalten bereits ein Soft Limit gesetzt ist |
-| Register-Timeout | Nach 15 Min ohne Refresh fallen alle Register auf Default zurück |
-| RL-Begrenzung | Die Luxtronik begrenzt den SOLL auf max. 50°C (Register IR10103) |
-| Mindestleistung | Der Inverter-Kompressor hat ein Minimum von ca. 700W |
 | Schreibpausen | Zwischen Registerschreibvorgängen mindestens 1 Sekunde warten |
-| Startdelta | Für Kompressorstart braucht es mindestens ca. 10K Delta (SOLL - RL_ext) |
+| Startdelta (Workaround) | Für einen zuverlässigen Kompressorstart hat sich in der Praxis ein Delta von ca. 10K (SOLL - RL_ext) bewährt. Dies ist keine Herstellervorgabe, sondern ein empirischer Erfahrungswert. |
 
 ---
 
