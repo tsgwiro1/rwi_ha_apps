@@ -6,6 +6,7 @@ import paho.mqtt.client as mqtt
 
 from config import VERSION
 
+
 class MqttHandler:
     def __init__(self, config, log):
         self.config = config
@@ -64,6 +65,8 @@ class MqttHandler:
                 f"{self.prefix}/set/min_standzeit": ('min_standzeit', int),
                 f"{self.prefix}/set/max_temperature": ('max_temperature', float),
                 f"{self.prefix}/set/min_power": ('min_power', int),
+                f"{self.prefix}/set/min_start_duration": ('min_start_duration', int),
+                f"{self.prefix}/set/min_battery_soc": ('min_battery_soc', int),
             }
 
             if topic in param_map:
@@ -100,6 +103,7 @@ class MqttHandler:
             'wp_running': ('wp_running', lambda x: 'ON' if x else 'OFF'),
             'modbus_connected': ('modbus_connected', lambda x: 'ON' if x else 'OFF'),
             'energy_today': ('energy_today', str),
+            'battery_soc': ('battery_soc', str),
         }
 
         for key, (topic_suffix, converter) in mappings.items():
@@ -148,6 +152,8 @@ class MqttHandler:
              "icon": "mdi:timer-alert-outline"},
             {"id": "energy_today", "name": "Energie heute", "unit": "kWh",
              "device_class": "energy", "icon": "mdi:counter"},
+            {"id": "battery_soc", "name": "Batteriestand", "unit": "%",
+             "device_class": "battery", "icon": "mdi:battery-charging-60"},
         ]
 
         for sensor in sensors:
@@ -229,6 +235,12 @@ class MqttHandler:
             {"id": "min_power", "name": "Min. Leistung", "min": 500,
              "max": 2000, "step": 100, "unit": "W",
              "icon": "mdi:speedometer-slow"},
+            {"id": "min_start_duration", "name": "Min. Überschuss-Dauer",
+             "min": 1, "max": 15, "step": 1, "unit": "min",
+             "icon": "mdi:timer-sand"},
+            {"id": "min_battery_soc", "name": "Min. Batteriestand",
+             "min": 0, "max": 100, "step": 5, "unit": "%",
+             "icon": "mdi:battery-charging-40"},
         ]
 
         for num in numbers:

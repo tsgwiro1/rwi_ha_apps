@@ -1,7 +1,7 @@
 # PV Wärmepumpen Steuerung
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 1.0.3](https://img.shields.io/badge/Version-1.0.3-blue.svg)]()
+[![Version: 1.0.7](https://img.shields.io/badge/Version-1.0.7-blue.svg)]()
 [![HA Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue.svg)](https://www.home-assistant.io/)
 
 Dieses Home Assistant Add-on steuert eine **Alpha Innotec Wärmepumpe** (Luxtronik 2.1) über **Modbus TCP** zur Optimierung des PV-Eigenverbrauchs. Bei Solarüberschuss wird der Kombispeicher über den Heizbetrieb geladen – vollautomatisch, intelligent und sicher.
@@ -129,11 +129,14 @@ Alle folgenden Bedingungen müssen gleichzeitig erfüllt sein:
 | # | Bedingung | Prüfung |
 |---|---|---|
 | 1 | PV-Überschuss ausreichend | pv_surplus >= min_surplus |
-| 2 | Schaltspielsperre abgelaufen | cooldown = 0 |
-| 3 | Speicher nicht voll | rl_extern < max_temperature |
-| 4 | Genug Spielraum | max_temperature - rl_extern >= offset |
-| 5 | Kompressor frei | Nicht extern belegt (WW, Abtauen) |
-| 6 | Modbus verbunden | Verbindung steht |
+| 2 | PV-Überschuss stabil | PV >= min_surplus seit min_start_duration |
+| 3 | Batterie-SOC ausreichend | battery_soc >= min_battery_soc (0% = deaktiviert) |
+| 4 | Schaltspielsperre abgelaufen | cooldown = 0 |
+| 5 | Speicher nicht voll | rl_extern < max_temperature |
+| 6 | Genug Spielraum | max_temperature - rl_extern >= offset |
+| 7 | Kompressor frei | Nicht extern belegt (WW, Abtauen) |
+| 8 | Keine EVU-Sperre / Abtauen | Betriebsart ≠ 3 und ≠ 4 |
+| 9 | Modbus verbunden | Verbindung steht |
 
 Wenn Bedingung 4 nicht erfüllt ist (z.B. RL_ext=52°C, max=55°C, Offset=5K, Delta=3K < 5K), wird **nicht gestartet** und eine entsprechende Meldung geloggt.
 
@@ -151,7 +154,7 @@ Wenn Bedingung 4 nicht erfüllt ist (z.B. RL_ext=52°C, max=55°C, Offset=5K, De
 | BETRIEB | ABSCHALT | RL_ext >= max_temp ODER Mode="Aus" | – |
 | ABREGELUNG | BETRIEB | PV >= min_surplus | Timer reset |
 | ABREGELUNG | ABSCHALT | Timer abgelaufen | – |
-| BETRIEB/ABREGELUNG | WARTEN | Kompressor extern gestoppt | Cooldown starten |
+| BETRIEB/ABREGELUNG | WARTEN | Kompressor extern gestoppt | Reset + Cooldown starten |
 | Jeder aktive | ABSCHALT | SAFETY Verletzung | Sofort! |
 
 ---
@@ -160,10 +163,16 @@ Wenn Bedingung 4 nicht erfüllt ist (z.B. RL_ext=52°C, max=55°C, Offset=5K, De
 
 | Schutz | Bedingung | Aktion | Konfigurierbar |
 |---|---|---|---|
-| **NOTAUS** | RL_extern >= 60°C | Sofort ABSCHALT + CRITICAL Log | max_absolute_temperature |
+| **NOTAUS** | RL extern >= max_absolute_temperature UND aktive Steuerung | CRITICAL + Sofort ABSCHALT | max_absolute_temperature (65°C) |
+| **Überhitzungs-Warnung** | RL extern >= max_absolute_temperature OHNE aktive Steuerung | WARNING + kein Start möglich | max_absolute_temperature (65°C) |
 | **Max Temperatur** | RL_extern >= max_temperature | ABSCHALT | Dashboard Slider |
 | **Schaltspielschutz** | Cooldown aktiv | Kein Start möglich | min_standzeit |
+| **Progressiver Cooldown** | Nach Fehlstart(s) | Cooldown × 2 (max × 3) | Automatisch |
+| **EVU-Sperre Erkennung** | Betriebsart = 3 | Kein Start möglich | Automatisch |
+| **Start-Hysterese** | PV muss X Min stabil über Schwelle | Kein Sofort-Start bei Spikes | min_start_duration |
+| **Min. Batteriestand** | SOC unter Schwelle | Kein Start | min_battery_soc |
 | **Anlauf-Timeout** | 300s ohne Kompressorstart | ABSCHALT + ERROR Log | startup_no_limit_s |
+| **Reset-Verifizierung** | Kompressor läuft 120s nach Reset noch | WARNING Log | Automatisch |
 | **Register-Timeout** | Refresh alle 60s | WP fällt nach 15 Min auf Default | modbus_refresh_s |
 | **Modbus-Disconnect** | Verbindung verloren | Retry alle 30s | modbus_retry_delay_s |
 | **HA-Disconnect** | Kein PV-Wert seit 5 Min | Letzte Werte, dann ABSCHALT | ha_connection_timeout_min |
@@ -171,12 +180,19 @@ Wenn Bedingung 4 nicht erfüllt ist (z.B. RL_ext=52°C, max=55°C, Offset=5K, De
 
 ### Schaltspielschutz
 
-Cooldown = max(wp_min_standzeit_min, pvwp_min_standzeit)
+Cooldown = max(wp_min_standzeit_min, pvwp_min_standzeit) × Multiplikator
 
 - wp_min_standzeit_min: Technisches Hardlimit (Add-on Config, Standard: 20 Min)
 - pvwp_min_standzeit: User-Einstellung (Dashboard Slider, Standard: 25 Min)
+- Multiplikator: 1 (normal), 2 (nach 1 Fehlstart), 3 (nach 2+ Fehlstarts)
 
-Der User kann die technische Grenze **nie unterschreiten**.
+Der User kann die technische Grenze **nie unterschreiten**. Bei erfolgreichen Starts wird der Multiplikator zurückgesetzt.
+
+| Situation | Cooldown (bei min_standzeit=25) |
+|---|---|
+| Normaler Stopp | 25 Min |
+| Nach 1 Fehlstart | 50 Min |
+| Nach 2+ Fehlstarts | 75 Min |
 
 ---
 
@@ -188,10 +204,12 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 
 | Mögliche Ursache | Reaktion |
 |---|---|
-| RL-Begrenzung der Luxtronik (50°C) | → WARTEN + Cooldown |
-| Warmwasser-Anforderung beendet | → WARTEN + Cooldown |
-| EVU-Sperre | → WARTEN + Cooldown |
-| Hochdruckstörung | → WARTEN + Cooldown |
+| RL-Begrenzung der Luxtronik (50°C) | → **Reset** + WARTEN + Cooldown |
+| Warmwasser-Anforderung beendet | → **Reset** + WARTEN + Cooldown |
+| EVU-Sperre | → **Reset** + WARTEN + Cooldown |
+| Hochdruckstörung | → **Reset** + WARTEN + Cooldown |
+
+**Wichtig:** Bei jedem Verlassen des aktiven Zustands (ANLAUF/BETRIEB/ABREGELUNG) werden die Modbus-Register **immer** zurückgesetzt – unabhängig vom Grund. Nach Reset wird verifiziert, dass der Kompressor innerhalb von 120s stoppt (WARNING falls nicht).
 
 ### Externer Start (während WARTEN)
 
@@ -237,6 +255,7 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | Wärmepumpe Modbus Port | wp_port | Integer | Modbus TCP Port | 502 |
 | Modbus Slave ID | wp_slave_id | Integer | Slave ID der Wärmepumpe | 1 |
 | PV-Überschuss Entity | ha_entity_pv_surplus | String | HA Entity-ID die den PV-Überschuss in Watt liefert | sensor.solar_surplus_power |
+| Batterie SOC Entity | ha_entity_battery_soc | String | HA Entity-ID für Batterie-Ladestand in % (leer = deaktiviert) | sensor.battery_state_of_capacity |
 | Modbus Schreibintervall | modbus_refresh_s | Integer | Wie oft Register geschrieben werden (s) | 60 |
 | Messintervall | measurement_interval_s | Integer | Wie oft Sensoren gelesen werden (s) | 15 |
 | Anlauf-Timeout | startup_no_limit_s | Integer | Max. Wartezeit auf Kompressorstart (s) | 300 |
@@ -255,6 +274,8 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | **Betriebsmodus** | Aus / PV Überschuss / Sofort | Aus | – | Hauptschalter |
 | **Offset** | 3.0 – 20.0 | 5.0 | K | Aufschlag auf RL extern |
 | **Min. PV Überschuss** | 500 – 5000 | 800 | W | Startschwelle |
+| **Min. Überschuss-Dauer** | 1 – 15 | 10 | min | PV muss X Min stabil über Schwelle sein |
+| **Min. Batteriestand** | 0 – 100 | 0 | % | Batterie-SOC unter dem nicht gestartet wird (0 = deaktiviert) |
 | **Ausschaltverzögerung** | 5 – 60 | 30 | min | Wartezeit bei PV-Mangel |
 | **Min. Standzeit** | 5 – 60 | 25 | min | Pause zwischen Einschaltungen |
 | **Max. Speichertemperatur** | 40.0 – 60.0 | 55.0 | °C | Obere Grenze |
@@ -280,6 +301,7 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | Standzeit | min | Verbleibende Schaltspielsperre |
 | Abschalt-Timer | min | Verbleibende Ausschaltverzögerung |
 | Energie heute | kWh | Heutige Energie (Reset Mitternacht) |
+| Batteriestand | % | Batterie State of Charge (wenn konfiguriert) |
 
 ### Binärsensoren
 
@@ -299,6 +321,8 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | Min. Standzeit | Number (Slider) | Cooldown in Minuten |
 | Max. Speichertemperatur | Number (Slider) | Obere Grenze in °C |
 | Min. Leistung | Number (Slider) | Untere Limit-Grenze in Watt |
+| Min. Überschuss-Dauer | Number (Slider) | PV-Stabilisierungszeit in Minuten |
+| Min. Batteriestand | Number (Slider) | Min. Batterie-SOC in % (0 = deaktiviert) |
 
 ---
 
@@ -362,6 +386,7 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 5. **Netzwerk:** WP und HA im gleichen LAN
 6. **MQTT:** Mosquitto Add-on in HA installiert und konfiguriert
 7. **PV-Sensor:** Ein HA Entity das den PV-Überschuss in Watt liefert
+8. **Batterie-Sensor (optional):** Ein HA Entity das den Batterie-SOC in % liefert
 
 ---
 
@@ -388,8 +413,8 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 |---|---|---|
 | error | Nur Fehler und kritische Ereignisse | Produktiv (minimal) |
 | warning | + Warnungen (externe Stopps, Safety) | Produktiv |
-| info | + Zustandsänderungen, Start/Stopp | Normalbetrieb |
-| debug | + Jeder 15s-Messzyklus mit allen Werten | Nur Fehlersuche! |
+| info | + Zustandswechsel, Start/Stopp, Zyklus-Zusammenfassung | Normalbetrieb |
+| debug | + Heartbeat (60 Min), BETRIEB↔ABREGELUNG Wechsel, Fixwert/Limit, Modbus verify, Messzyklen | Nur Fehlersuche! |
 
 ### Häufige Probleme
 
@@ -402,6 +427,8 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | Kompressor extern gestoppt | Kompressor extern gestoppt! | Normal! Cooldown läuft. |
 | Kein Start wegen Delta | zu wenig Spielraum | Speicher warm, warten |
 | NOTAUS | RL extern >= 60°C | Warten bis abgekühlt |
+| EVU-Sperre blockiert Start | EVU-Sperre aktiv | Normal! Warte auf Freigabe (~60-90 Min) |
+| Mehrere Fehlstarts | ANLAUF FEHLGESCHLAGEN, Fehlstarts=2 | WP-interne Sperre, Cooldown verlängert sich automatisch |
 
 ---
 
@@ -425,6 +452,7 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | pvwp/wp_running | ON/OFF | Kompressor |
 | pvwp/modbus_connected | ON/OFF | Modbus |
 | pvwp/energy_today | 2.4 | Energie (kWh) |
+| pvwp/battery_soc | 85 | Batteriestand (%) |
 | pvwp/availability | online/offline | Last Will |
 
 ### Steuerung (HA → Add-on)
@@ -438,6 +466,8 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | pvwp/set/min_standzeit | 25 | Standzeit (min) |
 | pvwp/set/max_temperature | 55.0 | Max. Temp (°C) |
 | pvwp/set/min_power | 600 | Min. Leistung (W) |
+| pvwp/set/min_start_duration | 10 | Min. Überschuss-Dauer (min) |
+| pvwp/set/min_battery_soc | 0 | Min. Batteriestand (%) |
 
 ---
 

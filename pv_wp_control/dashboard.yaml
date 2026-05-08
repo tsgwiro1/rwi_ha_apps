@@ -1,51 +1,48 @@
-title: PV Wärmepumpen Steuerung
-views:
-  - title: Übersicht
+  - title: Wärmepumpe PV
     path: pvwp
     icon: mdi:heat-pump
     cards:
-      # === STATUS ===
       - type: entities
-        title: "⚙️ Status"
+        title: ⚙️ Status
         show_header_toggle: false
         entities:
-          - entity: select.pvwp_mode
+          - entity: select.pv_warmepumpen_steuerung_betriebsmodus
             name: Betriebsmodus
-          - entity: sensor.pvwp_state
+          - entity: sensor.pv_warmepumpen_steuerung_zustand
             name: Zustand
-          - entity: sensor.pvwp_runtime
+          - entity: sensor.pv_warmepumpen_steuerung_laufzeit
             name: Laufzeit
-          - entity: sensor.pvwp_cooldown
+          - entity: sensor.pv_warmepumpen_steuerung_abschalt_timer
+            name: Abschalt-Timer
+          - entity: sensor.pv_warmepumpen_steuerung_standzeit
             name: Standzeit verbleibend
-          - entity: binary_sensor.pvwp_wp_running
+          - entity: binary_sensor.pv_warmepumpen_steuerung_wp_kompressor
             name: Kompressor
-          - entity: binary_sensor.pvwp_modbus_connected
+          - entity: binary_sensor.pv_warmepumpen_steuerung_modbus_verbindung
             name: Modbus Verbindung
-
-      # === LEISTUNG ===
       - type: glance
-        title: "⚡ Leistung"
+        title: ⚡ Leistung
         columns: 3
         show_state: true
         entities:
-          - entity: sensor.pvwp_pv_surplus
+          - entity: sensor.pv_warmepumpen_steuerung_pv_uberschuss
             name: PV Überschuss
-          - entity: sensor.pvwp_power_consumption
+          - entity: sensor.pv_warmepumpen_steuerung_leistungsaufnahme
             name: WP Aufnahme
-          - entity: sensor.pvwp_heat_output
+          - entity: sensor.pv_warmepumpen_steuerung_heizleistung
             name: Heizleistung
-          - entity: sensor.pvwp_cop
+          - entity: sensor.pv_warmepumpen_steuerung_cop
             name: COP
-          - entity: sensor.pvwp_active_limit
+          - entity: sensor.pv_warmepumpen_steuerung_aktives_limit
             name: Aktives Limit
-          - entity: sensor.pvwp_energy_today
+          - entity: sensor.pv_warmepumpen_steuerung_energie_heute
             name: Energie heute
-
-      # === SPEICHER ===
+          - entity: sensor.pv_warmepumpen_steuerung_batteriestand
+            name: Batterie SOC
       - type: gauge
-        entity: sensor.pvwp_rl_extern
+        entity: sensor.pv_warmepumpen_steuerung_speichertemperatur
         name: Speichertemperatur
-        unit: "°C"
+        unit: °C
         min: 20
         max: 60
         needle: true
@@ -53,144 +50,54 @@ views:
           green: 20
           yellow: 45
           red: 55
-
       - type: entities
-        title: "🌡️ Temperaturen"
+        title: 🌡️ Temperaturen
         entities:
-          - entity: sensor.pvwp_rl_extern
+          - entity: sensor.pv_warmepumpen_steuerung_speichertemperatur
             name: Speicher (RL extern)
-          - entity: sensor.pvwp_rl_soll
+          - entity: sensor.pv_warmepumpen_steuerung_sollwert
             name: Sollwert (an WP)
-          - entity: number.pvwp_max_temperature
-            name: Maximum
-
-      # === EINSTELLUNGEN ===
       - type: entities
-        title: "🔧 Einstellungen"
+        title: 🔧 Einstellungen
         show_header_toggle: false
         entities:
-          - entity: number.pvwp_offset
+          - entity: number.pv_warmepumpen_steuerung_offset
             name: Offset
-          - entity: number.pvwp_min_surplus
+          - entity: number.pv_warmepumpen_steuerung_min_pv_uberschuss
             name: Min. PV Überschuss
-          - entity: number.pvwp_shutdown_delay
+          - entity: number.pv_warmepumpen_steuerung_min_uberschuss_dauer
+            name: Min. Überschuss-Dauer
+          - entity: number.pv_warmepumpen_steuerung_min_batteriestand
+            name: Min. Batteriestand
+          - entity: number.pv_warmepumpen_steuerung_ausschaltverzogerung
             name: Ausschaltverzögerung
-          - entity: number.pvwp_min_standzeit
+          - entity: number.pv_warmepumpen_steuerung_min_standzeit
             name: Min. Standzeit
-          - entity: number.pvwp_max_temperature
-            name: Max. Speichertemperatur
-          - entity: number.pvwp_min_power
+          - entity: number.pv_warmepumpen_steuerung_max_speichertemperatur
+            name: Speicherladung
+          - entity: number.pv_warmepumpen_steuerung_min_leistung
             name: Min. Leistung
-
-      # === GRAPH: Leistung & COP ===
-      - type: custom:apexcharts-card
-        header:
-          title: Leistung & COP (24h)
-          show: true
-        graph_span: 24h
-        span:
-          end: now
-        yaxis:
-          - id: power
-            min: 0
-            max: 3000
-            apex_config:
-              title:
-                text: "Leistung (W)"
-          - id: cop
-            min: 0
-            max: 8
-            opposite: true
-            apex_config:
-              title:
-                text: "COP"
-        series:
-          - entity: sensor.pvwp_pv_surplus
-            name: PV Überschuss
-            color: "#FFC107"
-            yaxis_id: power
-            type: area
-            opacity: 0.2
-            stroke_width: 1
-          - entity: sensor.pvwp_power_consumption
-            name: WP Aufnahme
-            color: "#4CAF50"
-            yaxis_id: power
-            type: line
-            stroke_width: 2
-          - entity: sensor.pvwp_active_limit
-            name: Soft Limit
-            color: "#F44336"
-            yaxis_id: power
-            type: line
-            stroke_width: 1
-            curve: stepline
-          - entity: sensor.pvwp_cop
-            name: COP
-            color: "#2196F3"
-            yaxis_id: cop
-            type: line
-            stroke_width: 2
-            stroke_dash: 4
-
-      # === GRAPH: Temperaturen ===
-      - type: custom:apexcharts-card
-        header:
-          title: Speichertemperatur (24h)
-          show: true
-        graph_span: 24h
-        span:
-          end: now
-        yaxis:
-          - id: temp
-            min: 20
-            max: 60
-            apex_config:
-              title:
-                text: "Temperatur (°C)"
-        series:
-          - entity: sensor.pvwp_rl_extern
-            name: Speicher (RL extern)
-            color: "#2196F3"
-            yaxis_id: temp
-            type: area
-            opacity: 0.15
-            stroke_width: 2
-          - entity: sensor.pvwp_rl_soll
-            name: Sollwert
-            color: "#FF9800"
-            yaxis_id: temp
-            type: line
-            stroke_width: 1
-            curve: stepline
-
-      # === GRAPH: State Timeline ===
-      - type: custom:apexcharts-card
-        header:
-          title: Betriebszustand (24h)
-          show: true
-        graph_span: 24h
-        span:
-          end: now
-        series:
-          - entity: sensor.pvwp_state
-            type: column
-            color: "#4CAF50"
-            group_by:
-              func: raw
-              duration: 5min
-
-      # === HISTORY ===
       - type: history-graph
-        title: "📈 Verlauf (native)"
+        title: 📈 Leistung (24h)
         hours_to_show: 24
         entities:
-          - entity: sensor.pvwp_power_consumption
-            name: WP Leistung
-          - entity: sensor.pvwp_pv_surplus
+          - entity: sensor.pv_warmepumpen_steuerung_pv_uberschuss
             name: PV Überschuss
-          - entity: sensor.pvwp_rl_extern
-            name: Speichertemp
-          - entity: sensor.pvwp_state
-            name: Zustand
-
+          - entity: sensor.pv_warmepumpen_steuerung_leistungsaufnahme
+            name: WP Aufnahme
+          - entity: sensor.pv_warmepumpen_steuerung_aktives_limit
+            name: Limit
+      - type: history-graph
+        title: 🌡️ Temperatur (24h)
+        hours_to_show: 24
+        entities:
+          - entity: sensor.pv_warmepumpen_steuerung_speichertemperatur
+            name: Speicher
+          - entity: sensor.pv_warmepumpen_steuerung_sollwert
+            name: Sollwert
+      - type: history-graph
+        title: 📊 COP (24h)
+        hours_to_show: 24
+        entities:
+          - entity: sensor.pv_warmepumpen_steuerung_cop
+            name: COP

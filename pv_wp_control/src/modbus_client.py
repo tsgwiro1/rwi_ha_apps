@@ -147,7 +147,7 @@ class ModbusClient:
                                                  slave=self.config.wp_slave_id)
             if r and not r.isError():
                 actual_soll = r.registers[0] / 10
-                self.log.info(f"Modbus write verify: SOLL={actual_soll:.1f}°C "
+                self.log.debug(f"Modbus write verify: SOLL={actual_soll:.1f}°C "
                              f"(erwartet ~{fixwert_celsius:.1f}°C)")
                 if actual_soll < 25:
                     self.log.warning("SOLL nicht übernommen!")
@@ -211,7 +211,6 @@ class ModbusClient:
             time.sleep(1.0)
             self.client.write_register(10065, 0, slave=self.config.wp_slave_id)
 
-            self.log.info("Modbus Reset: Alle Register auf Default")
             return True
 
         except Exception as e:

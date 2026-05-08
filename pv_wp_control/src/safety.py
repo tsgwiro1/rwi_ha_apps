@@ -5,7 +5,6 @@ class SafetyMonitor:
     def __init__(self, config, log):
         self.config = config
         self.log = log
-        self._last_notaus_logged = False
 
     def check(self, modbus_data, params):
         """
@@ -19,15 +18,10 @@ class SafetyMonitor:
         if rl_extern is None:
             return True, ""
 
-        # NOTAUS: Absolute Maximaltemperatur (nicht konfigurierbar!)
+        # Absolute Maximaltemperatur überschritten?
         if rl_extern >= self.config.max_absolute_temperature:
-            msg = (f"NOTAUS: RL extern {rl_extern:.1f}°C >= "
-                   f"{self.config.max_absolute_temperature}°C!")
-            if not self._last_notaus_logged:
-                self.log.critical(msg)
-                self._last_notaus_logged = True
+            msg = (f"RL extern {rl_extern:.1f}°C >= "
+                   f"{self.config.max_absolute_temperature:.1f}°C")
             return False, msg
-        else:
-            self._last_notaus_logged = False
 
         return True, ""

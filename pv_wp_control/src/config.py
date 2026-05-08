@@ -13,11 +13,12 @@ if os.path.exists(_config_yaml_path):
                 VERSION = _line.split(':', 1)[1].strip().strip('"').strip("'")
                 break
 
+
 class Config:
     def __init__(self):
         args = sys.argv
 
-        if len(args) < 20:
+        if len(args) < 21:
             # Fallback: Lade aus /data/options.json (für lokalen Test)
             self._load_from_options_file()
             return
@@ -31,17 +32,18 @@ class Config:
         self.wp_port = int(args[6])
         self.wp_slave_id = int(args[7])
         self.ha_entity_pv_surplus = args[8]
-        self.modbus_refresh_s = int(args[9])
-        self.measurement_interval_s = int(args[10])
-        self.startup_no_limit_s = int(args[11])
-        self.wp_min_standzeit_min = int(args[12])
-        self.max_absolute_temperature = float(args[13])
-        self.mqtt_topic_prefix = args[14]
-        self.mqtt_discovery_prefix = args[15]
-        self.log_level = args[16]
-        self.ha_token = args[17]
-        self.ha_connection_timeout_min = int(args[18])
-        self.modbus_retry_delay_s = int(args[19])
+        self.ha_entity_battery_soc = args[9]
+        self.modbus_refresh_s = int(args[10])
+        self.measurement_interval_s = int(args[11])
+        self.startup_no_limit_s = int(args[12])
+        self.wp_min_standzeit_min = int(args[13])
+        self.max_absolute_temperature = float(args[14])
+        self.mqtt_topic_prefix = args[15]
+        self.mqtt_discovery_prefix = args[16]
+        self.log_level = args[17]
+        self.ha_token = args[18]
+        self.ha_connection_timeout_min = int(args[19])
+        self.modbus_retry_delay_s = int(args[20])
 
         # Fixed values
         self.register_timeout_min = 15
@@ -64,6 +66,8 @@ class Config:
         self.wp_slave_id = opts.get('wp_slave_id', 1)
         self.ha_entity_pv_surplus = opts.get('ha_entity_pv_surplus',
                                              'sensor.solar_surplus_power')
+        self.ha_entity_battery_soc = opts.get('ha_entity_battery_soc',
+                                              'sensor.battery_state_of_capacity')
         self.modbus_refresh_s = opts.get('modbus_refresh_s', 60)
         self.measurement_interval_s = opts.get('measurement_interval_s', 15)
         self.startup_no_limit_s = opts.get('startup_no_limit_s', 180)
@@ -93,4 +97,6 @@ class Config:
             'min_standzeit': 25,
             'max_temperature': 55.0,
             'min_power': 600,
+            'min_start_duration': 10,
+            'min_battery_soc': 0,
         }

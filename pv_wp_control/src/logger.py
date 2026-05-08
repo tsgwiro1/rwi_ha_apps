@@ -26,5 +26,7 @@ def get_logger(level_str='info'):
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
-    return logger
+    # pymodbus Connection-Meldungen unterdrücken
+    logging.getLogger("pymodbus").setLevel(logging.WARNING)
 
+    return logger

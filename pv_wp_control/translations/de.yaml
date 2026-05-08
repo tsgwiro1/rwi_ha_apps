@@ -23,6 +23,9 @@ configuration:
   ha_entity_pv_surplus:
     name: PV-Überschuss Entity
     description: HA Entity-ID die den PV-Überschuss in Watt liefert
+  ha_entity_battery_soc:
+    name: "Batterie SOC Entity"
+    description: "HA Entity-ID für den Batterie-Ladestand in % (leer = deaktiviert)"
   modbus_refresh_s:
     name: Modbus Schreibintervall
     description: Wie oft Register geschrieben werden (Sekunden)

@@ -23,6 +23,9 @@ configuration:
   ha_entity_pv_surplus:
     name: PV Surplus Entity
     description: HA entity ID providing PV surplus in Watts
+  ha_entity_battery_soc:
+    name: "Battery SOC Entity"
+    description: "HA Entity ID for battery state of charge in % (empty = disabled)"
   modbus_refresh_s:
     name: Modbus Write Interval
     description: How often registers are written (seconds)
