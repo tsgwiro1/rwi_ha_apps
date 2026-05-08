@@ -9,6 +9,7 @@ class HAClient:
         self.config = config
         self.log = log
         self._last_value = None
+        self._last_battery_soc = None
         self._last_success = time.time()
         self._consecutive_errors = 0
 
@@ -73,3 +74,47 @@ class HAClient:
             self.log.error(f"HA API Fehler: {e}")
             return self._last_value
 
+    def get_battery_soc(self):
+        """Batterie-SOC aus HA Entity lesen. Gibt int (0-100) oder None."""
+        entity_id = self.config.ha_entity_battery_soc
+        if not entity_id:
+            return None
+
+        url = f"{self.config.ha_url}/states/{entity_id}"
+
+        headers = {
+            'Authorization': f'Bearer {self.config.ha_token}',
+            'Content-Type': 'application/json',
+        }
+
+        try:
+            response = requests.get(url, headers=headers, timeout=5)
+
+            if response.status_code == 200:
+                data = response.json()
+                state = data.get('state', 'unavailable')
+
+                if state in ('unavailable', 'unknown', 'None'):
+                    self.log.debug(f"HA Entity {entity_id} = {state}")
+                    return self._last_battery_soc
+
+                value = int(float(state))
+                self._last_battery_soc = value
+                return value
+
+            else:
+                self.log.warning(
+                    f"HA Battery SOC Fehler: {response.status_code} "
+                    f"(Entity: {entity_id})"
+                )
+                return self._last_battery_soc
+
+        except (ValueError, TypeError) as e:
+            self.log.warning(
+                f"HA Battery SOC Wert ungültig: {e} "
+                f"(Entity: {entity_id})")
+            return self._last_battery_soc
+
+        except Exception as e:
+            self.log.debug(f"HA Battery SOC Lesefehler: {e}")
+            return self._last_battery_soc

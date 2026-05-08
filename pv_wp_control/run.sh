@@ -10,6 +10,7 @@ WP_IP=$(bashio::config 'wp_ip')
 WP_PORT=$(bashio::config 'wp_port')
 WP_SLAVE_ID=$(bashio::config 'wp_slave_id')
 HA_ENTITY_PV=$(bashio::config 'ha_entity_pv_surplus')
+HA_ENTITY_BATTERY=$(bashio::config 'ha_entity_battery_soc')
 MODBUS_REFRESH=$(bashio::config 'modbus_refresh_s')
 MEASUREMENT_INTERVAL=$(bashio::config 'measurement_interval_s')
 STARTUP_NO_LIMIT=$(bashio::config 'startup_no_limit_s')
@@ -24,6 +25,7 @@ MODBUS_RETRY=$(bashio::config 'modbus_retry_delay_s')
 echo "MQTT: ${MQTT_HOST}:${MQTT_PORT} (User: ${MQTT_USER})"
 echo "WP: ${WP_IP}:${WP_PORT} (Slave: ${WP_SLAVE_ID})"
 echo "PV Entity: ${HA_ENTITY_PV}"
+echo "Battery Entity: ${HA_ENTITY_BATTERY}"
 
 exec python3 /app/main.py \
     "${MQTT_HOST}" \
@@ -34,6 +36,7 @@ exec python3 /app/main.py \
     "${WP_PORT}" \
     "${WP_SLAVE_ID}" \
     "${HA_ENTITY_PV}" \
+    "${HA_ENTITY_BATTERY}" \
     "${MODBUS_REFRESH}" \
     "${MEASUREMENT_INTERVAL}" \
     "${STARTUP_NO_LIMIT}" \

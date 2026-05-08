@@ -37,6 +37,8 @@ def main():
     log.info("=" * 60)
     log.info(f"WP: {config.wp_ip}:{config.wp_port} (Slave {config.wp_slave_id})")
     log.info(f"PV Entity: {config.ha_entity_pv_surplus}")
+    if config.ha_entity_battery_soc:
+        log.info(f"Battery SOC Entity: {config.ha_entity_battery_soc}")
     log.info(f"MQTT Prefix: {config.mqtt_topic_prefix}")
     log.info("=" * 60)
 
@@ -58,6 +60,10 @@ def main():
     energy_date = date.today()
     modbus_data = None
     pv_surplus = 0
+    battery_soc = None
+
+    # Logging-Optimierung Schreibzyklus
+    _anlauf_logged = False
 
     log.info("Entering main loop...")
 
@@ -82,16 +88,21 @@ def main():
                 # 2. Read PV surplus from HA
                 pv_surplus = ha.get_pv_surplus()
 
-                # 3. Get dynamic parameters from MQTT
+                # 3. Read Battery SOC from HA (if configured)
+                if config.ha_entity_battery_soc:
+                    battery_soc = ha.get_battery_soc()
+
+                # 4. Get dynamic parameters from MQTT
                 params = mqtt.get_parameters()
 
-                # 4. Safety check
+                # 5. Safety check
                 safety_ok, safety_msg = safety.check(modbus_data, params)
 
-                # 5. Evaluate state machine
+                # 6. Evaluate state machine
                 sm_input = {
                     'modbus': modbus_data,
                     'pv_surplus': pv_surplus,
+                    'battery_soc': battery_soc,
                     'params': params,
                     'safety_ok': safety_ok,
                     'safety_msg': safety_msg,
@@ -100,13 +111,13 @@ def main():
                 }
                 sm.evaluate(sm_input)
 
-                # 6. Energy tracking
+                # 7. Energy tracking
                 if modbus_data and modbus_data.get('leistung_kw', 0) > 0.1:
                     energy_today_wh += (modbus_data['leistung_kw'] * 1000 *
                                         config.measurement_interval_s / 3600)
 
-                # 7. Publish status via MQTT
-                mqtt.publish_status({
+                # 8. Publish status via MQTT
+                status = {
                     'state': sm.state.value,
                     'power': int(modbus_data.get('leistung_kw', 0) * 1000) if modbus_data else 0,
                     'heat_output': int(modbus_data.get('heizleistung_kw', 0) * 1000) if modbus_data else 0,
@@ -121,9 +132,12 @@ def main():
                     'wp_running': modbus_data.get('wp_running', False) if modbus_data else False,
                     'modbus_connected': modbus.is_connected(),
                     'energy_today': round(energy_today_wh / 1000, 2),
-                })
+                }
+                if battery_soc is not None:
+                    status['battery_soc'] = battery_soc
+                mqtt.publish_status(status)
 
-                # 8. Debug Log
+                # 9. Debug Log
                 if modbus_data:
                     if sm.state == State.ANLAUF:
                         limit_display = "KEIN"
@@ -139,26 +153,37 @@ def main():
                         f"PV={pv_surplus}W "
                         f"Leistung={modbus_data.get('leistung_kw', 0):.2f}kW "
                         f"Limit={limit_display}"
+                        f"{f' SOC={battery_soc}%' if battery_soc is not None else ''}"
                     )
 
             # --- Modbus write cycle (every 60s) ---
             if now - last_modbus_write >= config.modbus_refresh_s:
                 last_modbus_write = now
 
-                if sm.state in (State.ANLAUF, State.BETRIEB, State.ABREGELUNG):
+                # Reset-Flag: HÖCHSTE PRIORITÄT
+                if sm.reset_required:
+                    modbus.write_reset()
+                    log.info("Modbus Reset: Register zurückgesetzt (Cleanup)")
+
+                elif sm.state in (State.ANLAUF, State.BETRIEB, State.ABREGELUNG):
                     params = mqtt.get_parameters()
                     rl_extern = modbus_data.get('rl_extern', 30.0) if modbus_data else 30.0
                     pv_surplus_val = ha.get_pv_surplus() or 0
 
                     if sm.state == State.ANLAUF:
-                        # ANLAUF: Fixwert = max_temperature für sicheren Start
                         fixwert = params['max_temperature']
                         modbus.write_fixwert(fixwert)
                         sm.active_limit_w = 0
-                        log.info(f"ANLAUF: Fixwert={fixwert:.1f}°C "
+
+                        if not _anlauf_logged:
+                            log.info(
+                                f"ANLAUF: Fixwert={fixwert:.1f}°C "
                                 f"(Delta={fixwert-rl_extern:.1f}K, KEIN Limit)")
+                            _anlauf_logged = True
+
                     else:
-                        # BETRIEB / ABREGELUNG: Normaler Offset + Limit
+                        _anlauf_logged = False
+
                         fixwert = min(rl_extern + params['offset'],
                                       params['max_temperature'])
 
@@ -170,15 +195,22 @@ def main():
 
                         sm.active_limit_w = limit_w
                         modbus.write_fixwert_with_limit(fixwert, limit_w)
-                        log.info(f"BETRIEB: Fixwert={fixwert:.1f}°C "
-                                f"(RL_ext={rl_extern:.1f}°C + "
-                                f"Offset={params['offset']:.1f}K) "
-                                f"Limit={limit_w}W")
 
-                elif sm.state == State.ABSCHALT:
-                    modbus.write_reset()
-                    sm.transition_to_aus()
-                    log.info("ABSCHALT: Reset gesendet → AUS")
+                        # BETRIEB/ABREGELUNG Details nur auf DEBUG
+                        log.debug(
+                            f"BETRIEB: Fixwert={fixwert:.1f}°C "
+                            f"(RL_ext={rl_extern:.1f}°C + "
+                            f"Offset={params['offset']:.1f}K) "
+                            f"Limit={limit_w}W")
+
+            elif sm.state == State.ABSCHALT:
+                _anlauf_logged = False
+                success = modbus.write_reset()
+                if success:
+                    log.info("ABSCHALT: Reset gesendet → AUS (Cooldown)")
+                else:
+                    log.error("ABSCHALT: Reset FEHLGESCHLAGEN! Modbus nicht erreichbar")
+                sm.transition_to_aus()
 
             # Sleep
             time.sleep(1)
