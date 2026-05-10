@@ -1,7 +1,7 @@
 # PV Wärmepumpen Steuerung
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 1.0.7](https://img.shields.io/badge/Version-1.0.7-blue.svg)]()
+[![Version: 1.0.8](https://img.shields.io/badge/Version-1.0.8-blue.svg)]()
 [![HA Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue.svg)](https://www.home-assistant.io/)
 
 Dieses Home Assistant Add-on steuert eine **Alpha Innotec Wärmepumpe** (Luxtronik 2.1) über **Modbus TCP** zur Optimierung des PV-Eigenverbrauchs. Bei Solarüberschuss wird der Kombispeicher über den Heizbetrieb geladen – vollautomatisch, intelligent und sicher.
@@ -281,6 +281,30 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | **Max. Speichertemperatur** | 40.0 – 60.0 | 55.0 | °C | Obere Grenze |
 | **Min. Leistung** | 500 – 2000 | 600 | W | Untere Limit-Grenze |
 
+#### Parameter-Persistenz
+
+Dashboard-Einstellungen werden automatisch in `/data/params.json` gespeichert und überleben:
+- Add-on Neustarts
+- Rebuilds / Updates
+- HA Neustarts
+
+Die Datei wird nur gelöscht wenn das Add-on explizit mit "Daten löschen" deinstalliert wird. Bei Erstinstallation gelten die Default-Werte.
+
+**Inhalt `/data/params.json`:**
+
+```json
+{
+  "mode": "PV Überschuss",
+  "offset": 5.0,
+  "min_surplus": 800,
+  "shutdown_delay": 30,
+  "min_standzeit": 25,
+  "max_temperature": 50.0,
+  "min_power": 600,
+  "min_start_duration": 10,
+  "min_battery_soc": 25
+}
+
 ---
 
 ## 📊 Entities (automatisch erzeugt via MQTT Discovery)
@@ -495,6 +519,7 @@ Die folgenden Parameter basieren auf Herstellerangaben sowie eigenen Erkenntniss
 | src/ha_client.py | HA REST API |
 | src/safety.py | Sicherheitslogik |
 | src/logger.py | Logging |
+| scr/param_store.py | Persistente Parameter-Speicherung (/data/params.json) |
 | translations/de.yaml | Deutsche Bezeichnungen für Config-Optionen |
 | translations/en.yaml | Englische Bezeichnungen für Config-Optionen |
 

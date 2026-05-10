@@ -5,6 +5,7 @@ import time
 import paho.mqtt.client as mqtt
 
 from config import VERSION
+from param_store import ParamStore
 
 
 class MqttHandler:
@@ -14,8 +15,21 @@ class MqttHandler:
         self.prefix = config.mqtt_topic_prefix
         self.disc_prefix = config.mqtt_discovery_prefix
 
-        # Dynamic parameters (default values)
-        self._params = dict(config.default_params)
+        # Persistenter Parameter-Speicher
+        self._store = ParamStore(config.default_params, log)
+
+        # Parameter-Typen für Validierung
+        self._param_types = {
+            'mode': str,
+            'offset': float,
+            'min_surplus': int,
+            'shutdown_delay': int,
+            'min_standzeit': int,
+            'max_temperature': float,
+            'min_power': int,
+            'min_start_duration': int,
+            'min_battery_soc': int,
+        }
 
         # MQTT Client
         self.client = mqtt.Client(client_id="pvwp_control")
@@ -56,36 +70,33 @@ class MqttHandler:
         topic = msg.topic
         payload = msg.payload.decode('utf-8').strip()
 
-        try:
-            param_map = {
-                f"{self.prefix}/set/mode": ('mode', str),
-                f"{self.prefix}/set/offset": ('offset', float),
-                f"{self.prefix}/set/min_surplus": ('min_surplus', int),
-                f"{self.prefix}/set/shutdown_delay": ('shutdown_delay', int),
-                f"{self.prefix}/set/min_standzeit": ('min_standzeit', int),
-                f"{self.prefix}/set/max_temperature": ('max_temperature', float),
-                f"{self.prefix}/set/min_power": ('min_power', int),
-                f"{self.prefix}/set/min_start_duration": ('min_start_duration', int),
-                f"{self.prefix}/set/min_battery_soc": ('min_battery_soc', int),
-            }
+        if not payload:
+            return
 
-            if topic in param_map:
-                key, cast = param_map[topic]
+        try:
+            # Command topic: {prefix}/set/{key}
+            key = topic[len(f"{self.prefix}/set/"):]
+            if key in self._param_types:
+                cast = self._param_types[key]
                 value = cast(payload)
-                self._params[key] = value
+                self._store.set(key, value)
                 self.log.info(f"MQTT Param: {key} = {value}")
 
-                # Publish back confirmed value
+                # Publish back confirmed value (für HA UI)
                 self.client.publish(
-                    f"{self.prefix}/{key}",
-                    str(value),
-                    retain=True
-                )
+                    f"{self.prefix}/{key}", str(value), retain=True)
+
+        except (ValueError, TypeError) as e:
+            self.log.debug(
+                f"MQTT message parse skip: {e} "
+                f"(topic={topic}, payload={payload})")
         except Exception as e:
-            self.log.error(f"MQTT message Fehler: {e} (topic={topic}, payload={payload})")
+            self.log.error(
+                f"MQTT message Fehler: {e} "
+                f"(topic={topic}, payload={payload})")
 
     def get_parameters(self):
-        return dict(self._params)
+        return self._store.get_all()
 
     def publish_status(self, status):
         mappings = {
@@ -265,10 +276,11 @@ class MqttHandler:
                 retain=True
             )
 
-        # Publish initial parameter values
+        # Aktuelle Parameter-Werte an MQTT publizieren (für HA UI Sync)
         time.sleep(1)
-        defaults = self.config.default_params
-        for key, value in defaults.items():
-            self.client.publish(f"{self.prefix}/{key}", str(value), retain=True)
+        params = self._store.get_all()
+        for key, value in params.items():
+            self.client.publish(
+                f"{self.prefix}/{key}", str(value), retain=True)
 
         self.log.info("MQTT Discovery publiziert (Sensors, Select, Numbers)")

@@ -1,7 +1,13 @@
 
 ## 📝 Change-log
 
-### v1.0.7 (aktuell)
+### v1.0.8 (aktuell)
+- Parameter-Persistenz: Dashboard-Einstellungen werden in /data/params.json gespeichert
+- Einstellungen bleiben nach Rebuild, Neustart und Update erhalten
+- Neue Datei: param_store.py (persistenter Key-Value Store)
+- mqtt_handler.py vereinfacht (keine retained-Message Abhängigkeit mehr)
+
+### v1.0.7
 - BETRIEB↔ABREGELUNG Wechsel auf DEBUG (nur erster Eintritt auf INFO + Zusammenfassung bei Zyklus-Ende)
 - Reset-Verifizierung: WARNING wenn Kompressor 120s nach Reset noch läuft
 - Modbus-Disconnect Prüfung vor Speicher-voll (verhindert irreführende "99°C" Meldung)
