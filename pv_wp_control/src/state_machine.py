@@ -479,10 +479,6 @@ class StateMachine:
                 # Start-Hysterese: PV muss min_start_duration stabil sein
                 if self._pv_start_time == 0:
                     self._pv_start_time = time.time()
-                    self.log.info(
-                        f"WARTEN: PV={pv_surplus:.0f}W >= {min_surplus}W "
-                        f"– Stabilisierung läuft "
-                        f"({min_start_duration} min)")
 
                 elapsed = time.time() - self._pv_start_time
                 if elapsed >= self._min_start_duration_s:
@@ -495,6 +491,12 @@ class StateMachine:
                     self._anlauf_start = time.time()
                     self._reset_wait_logging()
                     self._reset_betrieb_tracking()
+                else:
+                    remaining = int(
+                        (self._min_start_duration_s - elapsed) / 60) + 1
+                    self._log_wait("Stabilisierung",
+                        f"PV={pv_surplus:.0f}W, noch {remaining} min")
+
             else:
                 if self._pv_start_time != 0:
                     self.log.debug(
@@ -519,16 +521,34 @@ class StateMachine:
                 self._failed_starts += 1
                 next_cooldown_min = int(
                     self._cooldown_s * min(self._failed_starts + 1, 3) / 60)
-                self.log.error(
-                    f"ANLAUF FEHLGESCHLAGEN: Kompressor nicht gestartet "
-                    f"nach {int(elapsed)}s. "
-                    f"Leistung={leistung_w:.0f}W (erwartet >300W). "
-                    f"Fehlstarts={self._failed_starts}, "
-                    f"nächster Cooldown={next_cooldown_min} min. "
-                    f"Mögliche Ursachen: WP-interne Schaltspielsperre, "
-                    f"Störung, EVU-Sperre. → ABSCHALT")
-                self.state = State.ABSCHALT
 
+                # Diagnose-Daten
+                wp_sperre = modbus.get(
+                    'schaltspielsperre_min', '?') if modbus else '?'
+                fehler_nr = modbus.get(
+                    'fehlernummer', '?') if modbus else '?'
+                status_hz = modbus.get(
+                    'status_heizen', '?') if modbus else '?'
+                leistung_min = modbus.get(
+                    'leistung_min_kw', '?') if modbus else '?'
+
+                status_map = {
+                    0: 'Aus', 1: 'keine Anf.',
+                    2: 'Anforderung', 3: 'Aktiv'}
+                status_text = status_map.get(status_hz, f'{status_hz}')
+
+                self.log.error(
+                    f"ANLAUF FEHLGESCHLAGEN nach {int(elapsed)}s. "
+                    f"Leistung={leistung_w:.0f}W, "
+                    f"Betriebsart={betriebsart}, "
+                    f"Status_Heizen={status_text}, "
+                    f"Schaltspielsperre={wp_sperre}min, "
+                    f"Fehlernummer={fehler_nr}, "
+                    f"Min.Leistung={leistung_min}kW. "
+                    f"Fehlstarts={self._failed_starts}, "
+                    f"nächster Cooldown={next_cooldown_min} min "
+                    f"→ ABSCHALT")
+                self.state = State.ABSCHALT
         # ----------------------------------------------------------
         elif self.state == State.BETRIEB:
             # Max Temperatur?

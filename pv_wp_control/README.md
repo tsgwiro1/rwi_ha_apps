@@ -1,7 +1,7 @@
 # PV Wärmepumpen Steuerung
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 1.0.8](https://img.shields.io/badge/Version-1.0.8-blue.svg)]()
+[![Version: 1.0.9](https://img.shields.io/badge/Version-1.0.9-blue.svg)]()
 [![HA Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue.svg)](https://www.home-assistant.io/)
 
 Dieses Home Assistant Add-on steuert eine **Alpha Innotec Wärmepumpe** (Luxtronik 2.1) über **Modbus TCP** zur Optimierung des PV-Eigenverbrauchs. Bei Solarüberschuss wird der Kombispeicher über den Heizbetrieb geladen – vollautomatisch, intelligent und sicher.
@@ -374,6 +374,9 @@ Die Datei wird nur gelöscht wenn das Add-on explizit mit "Daten löschen" deins
 | IR10300 | kW x 10 | Heizleistung |
 | IR10002 | 0-7 | Betriebsart (0=Heizen, 1=WW, 4=Abtauen, 5=Keine) |
 | IR10000 | Bitfeld | WP Status (Bit 0 = Kompressor) |
+| IR10201 | Fehlernummer | 0=kein Fehler, X=Fehlernummer |
+| IR10203 | Schaltspielsperre | Verbleibende Minuten bis zur nächsten Einschaltung |
+| IR10302 | Min. Leistungsaufnahme | Minimal prognostizierte elektr. Leistung (kW/10) |
 
 ### Betriebsparameter & Hinweise
 

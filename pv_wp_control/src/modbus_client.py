@@ -107,6 +107,18 @@ class ModbusClient:
             val = self._read_input_register(10003)
             data['status_heizen'] = val if val is not None else 0
 
+            # Fehlernummer - IR10201
+            val = self._read_input_register(10201)
+            data['fehlernummer'] = val if val is not None else None
+
+            # Schaltspielsperre (verbleibende Minuten) - IR10203
+            val = self._read_input_register(10203)
+            data['schaltspielsperre_min'] = val if val is not None else None
+
+            # Min. prognostizierte Leistungsaufnahme - IR10302
+            val = self._read_input_register(10302)
+            data['leistung_min_kw'] = val / 10 if val is not None else None
+
             # COP berechnen
             if data['leistung_kw'] and data['leistung_kw'] > 0.2:
                 data['cop'] = data['heizleistung_kw'] / data['leistung_kw']

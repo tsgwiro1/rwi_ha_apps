@@ -1,7 +1,12 @@
 
 ## 📝 Change-log
 
-### v1.0.8 (aktuell)
+### v1.0.9 (aktuell)
+- **Log-Spam behoben:** "Stabilisierung läuft" nutzt nun _log_wait Pattern (nur 1x INFO bei Eintritt, dann nur bei Grund-Wechsel)
+- **Diagnose-Register:** IR 10201 (Fehlernummer), IR 10203 (Schaltspielsperre), IR 10302 (Min. Leistung) werden gelesen
+- **Erweitertes Fehlstart-Logging:** Zeigt bei ANLAUF FEHLGESCHLAGEN alle Diagnose-Daten (Status Heizen, Schaltspielsperre, Fehlernummer, Min. Leistung)
+
+### v1.0.8
 - Parameter-Persistenz: Dashboard-Einstellungen werden in /data/params.json gespeichert
 - Einstellungen bleiben nach Rebuild, Neustart und Update erhalten
 - Neue Datei: param_store.py (persistenter Key-Value Store)
