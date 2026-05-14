@@ -1,7 +1,7 @@
 # PV Wärmepumpen Steuerung
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 1.0.9](https://img.shields.io/badge/Version-1.0.9-blue.svg)]()
+[![Version: 1.0.10](https://img.shields.io/badge/Version-1.0.10-blue.svg)]()
 [![HA Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue.svg)](https://www.home-assistant.io/)
 
 Dieses Home Assistant Add-on steuert eine **Alpha Innotec Wärmepumpe** (Luxtronik 2.1) über **Modbus TCP** zur Optimierung des PV-Eigenverbrauchs. Bei Solarüberschuss wird der Kombispeicher über den Heizbetrieb geladen – vollautomatisch, intelligent und sicher.
@@ -258,7 +258,7 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 | Batterie SOC Entity | ha_entity_battery_soc | String | HA Entity-ID für Batterie-Ladestand in % (leer = deaktiviert) | sensor.battery_state_of_capacity |
 | Modbus Schreibintervall | modbus_refresh_s | Integer | Wie oft Register geschrieben werden (s) | 60 |
 | Messintervall | measurement_interval_s | Integer | Wie oft Sensoren gelesen werden (s) | 15 |
-| Anlauf-Timeout | startup_no_limit_s | Integer | Max. Wartezeit auf Kompressorstart (s) | 300 |
+| Anlauf-Timeout | startup_no_limit_s | Integer | Max. Wartezeit auf Kompressorstart (s) | 1800 |
 | Technische Mindest-Standzeit | wp_min_standzeit_min | Integer | Minimale Pause zwischen Kompressorstarts (min) | 20 |
 | Modbus Retry Verzögerung | modbus_retry_delay_s | Integer | Wartezeit vor erneutem Verbindungsversuch (s) | 30 |
 | HA Verbindungs-Timeout | ha_connection_timeout_min | Integer | Max. Dauer ohne HA-Daten bevor Abschaltung (min) | 5 |
@@ -397,6 +397,7 @@ Die folgenden Parameter basieren auf Herstellerangaben sowie eigenen Erkenntniss
 |---|---|
 | Schreibpausen | Zwischen Registerschreibvorgängen mindestens 1 Sekunde warten |
 | Startdelta (Workaround) | Für einen zuverlässigen Kompressorstart hat sich in der Praxis ein Delta von ca. 10K (SOLL - RL_ext) bewährt. Dies ist keine Herstellervorgabe, sondern ein empirischer Erfahrungswert. |
+| Öl-Vorwärmung | Kompressor startet erst nach Öl-Vorwärmung (~100W, periodisch alle 25-30 min). Nach langer Standzeit kann Start bis zu 150s dauern. Timeout 1800s deckt alle Fälle ab. |
 
 ---
 

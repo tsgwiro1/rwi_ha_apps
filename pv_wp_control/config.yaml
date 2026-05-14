@@ -1,6 +1,6 @@
 name: "PV Wärmepumpen Steuerung"
 description: "PV-Überschusssteuerung für Alpha Innotec WP über Modbus TCP (SHI)"
-version: "1.0.9"
+version: "1.0.10"
 slug: "pv_wp_control"
 url: "https://github.com/your-repo/pv-wp-control"
 init: false
@@ -42,7 +42,7 @@ options:
   ha_entity_battery_soc: "sensor.battery_state_of_capacity"
   modbus_refresh_s: 60
   measurement_interval_s: 15
-  startup_no_limit_s: 300
+  startup_no_limit_s: 1800
   wp_min_standzeit_min: 20
   modbus_retry_delay_s: 30
   ha_connection_timeout_min: 5

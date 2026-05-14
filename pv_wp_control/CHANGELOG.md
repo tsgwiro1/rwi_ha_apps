@@ -1,7 +1,11 @@
 
 ## 📝 Change-log
 
-### v1.0.9 (aktuell)
+### v1.0.10 (aktuell)
+- startup_no_limit_s Default auf 1800s (30 min) – Kompressor hat nach langer Standzeit genug Zeit für Öl-Vorwärmung
+- Eliminiert Fehlstarts die durch zu kurzen Timeout (300s) verursacht wurden
+
+### v1.0.9
 - **Log-Spam behoben:** "Stabilisierung läuft" nutzt nun _log_wait Pattern (nur 1x INFO bei Eintritt, dann nur bei Grund-Wechsel)
 - **Diagnose-Register:** IR 10201 (Fehlernummer), IR 10203 (Schaltspielsperre), IR 10302 (Min. Leistung) werden gelesen
 - **Erweitertes Fehlstart-Logging:** Zeigt bei ANLAUF FEHLGESCHLAGEN alle Diagnose-Daten (Status Heizen, Schaltspielsperre, Fehlernummer, Min. Leistung)
