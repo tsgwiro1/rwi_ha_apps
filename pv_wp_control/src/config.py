@@ -48,6 +48,7 @@ class Config:
         # Fixed values
         self.register_timeout_min = 15
         self.ha_url = 'http://supervisor/core/api'
+        self.safety_hysteresis = 3.0  # °C (Recovery bei 62.0°C statt 65.0°C)
 
     def _load_from_options_file(self):
         """Fallback für lokalen Test."""
@@ -86,6 +87,7 @@ class Config:
         self.mqtt_password = os.environ.get('MQTT_PASSWORD', '')
         self.ha_token = os.environ.get('SUPERVISOR_TOKEN', '')
         self.ha_url = 'http://supervisor/core/api'
+        self.safety_hysteresis = 3.0  # °C (Recovery bei 62.0°C statt 65.0°C)
 
     @property
     def default_params(self):

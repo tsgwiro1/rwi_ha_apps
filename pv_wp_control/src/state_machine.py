@@ -63,6 +63,7 @@ class StateMachine:
         self._wait_reason_time = 0
         self._heartbeat_interval = 3600
         self._cooldown_logged = False
+        self._wait_reason_prev = None
 
     # === Properties ===
 
@@ -140,10 +141,15 @@ class StateMachine:
         self._cooldown_logged = False
 
     def _log_wait(self, reason, details):
-        """WARTEN-Log: Grund-Wechsel auf INFO, Heartbeat auf DEBUG."""
+        """WARTEN-Log: Grund-Wechsel auf INFO, Ping-Pong auf DEBUG."""
         now = time.time()
         if reason != self._wait_reason:
-            self.log.info(f"WARTEN: {reason} ({details})")
+            if reason == self._wait_reason_prev:
+                # Ping-Pong erkannt (A→B→A) → nur DEBUG
+                self.log.debug(f"WARTEN: {reason} ({details})")
+            else:
+                self.log.info(f"WARTEN: {reason} ({details})")
+            self._wait_reason_prev = self._wait_reason
             self._wait_reason = reason
             self._wait_reason_time = now
         elif now - self._wait_reason_time >= self._heartbeat_interval:
@@ -178,6 +184,7 @@ class StateMachine:
         self._cooldown_logged = False
         self._pv_recovered_count = 0
         self._pv_start_time = 0
+        self._wait_reason_prev = None
 
     # === Public Methods ===
 

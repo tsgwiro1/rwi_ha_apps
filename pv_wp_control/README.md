@@ -1,7 +1,7 @@
 # PV Wärmepumpen Steuerung
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 1.0.10](https://img.shields.io/badge/Version-1.0.10-blue.svg)]()
+[![Version: 1.0.11](https://img.shields.io/badge/Version-1.0.11-blue.svg)]()
 [![HA Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue.svg)](https://www.home-assistant.io/)
 
 Dieses Home Assistant Add-on steuert eine **Alpha Innotec Wärmepumpe** (Luxtronik 2.1) über **Modbus TCP** zur Optimierung des PV-Eigenverbrauchs. Bei Solarüberschuss wird der Kombispeicher über den Heizbetrieb geladen – vollautomatisch, intelligent und sicher.
@@ -164,7 +164,7 @@ Wenn Bedingung 4 nicht erfüllt ist (z.B. RL_ext=52°C, max=55°C, Offset=5K, De
 | Schutz | Bedingung | Aktion | Konfigurierbar |
 |---|---|---|---|
 | **NOTAUS** | RL extern >= max_absolute_temperature UND aktive Steuerung | CRITICAL + Sofort ABSCHALT | max_absolute_temperature (65°C) |
-| **Überhitzungs-Warnung** | RL extern >= max_absolute_temperature OHNE aktive Steuerung | WARNING + kein Start möglich | max_absolute_temperature (65°C) |
+| **Überhitzungs-Warnung** | RL extern >= max_absolute_temperature OHNE aktive Steuerung | WARNING + kein Start möglich, Recovery bei < 62°C (Hysterese 3K) | max_absolute_temperature (65°C) |
 | **Max Temperatur** | RL_extern >= max_temperature | ABSCHALT | Dashboard Slider |
 | **Schaltspielschutz** | Cooldown aktiv | Kein Start möglich | min_standzeit |
 | **Progressiver Cooldown** | Nach Fehlstart(s) | Cooldown × 2 (max × 3) | Automatisch |
@@ -304,7 +304,7 @@ Die Datei wird nur gelöscht wenn das Add-on explizit mit "Daten löschen" deins
   "min_start_duration": 10,
   "min_battery_soc": 25
 }
-
+```
 ---
 
 ## 📊 Entities (automatisch erzeugt via MQTT Discovery)
@@ -463,7 +463,7 @@ Die folgenden Parameter basieren auf Herstellerangaben sowie eigenen Erkenntniss
 | MQTT rc=5 | Verbindung fehlgeschlagen (rc=5) | User/Passwort prüfen |
 | Kompressor extern gestoppt | Kompressor extern gestoppt! | Normal! Cooldown läuft. |
 | Kein Start wegen Delta | zu wenig Spielraum | Speicher warm, warten |
-| NOTAUS | RL extern >= 60°C | Warten bis abgekühlt |
+| NOTAUS | RL extern >= 65°C | Warten bis < 62°C (3K Hysterese) |
 | EVU-Sperre blockiert Start | EVU-Sperre aktiv | Normal! Warte auf Freigabe (~60-90 Min) |
 | Mehrere Fehlstarts | ANLAUF FEHLGESCHLAGEN, Fehlstarts=2 | WP-interne Sperre, Cooldown verlängert sich automatisch |
 

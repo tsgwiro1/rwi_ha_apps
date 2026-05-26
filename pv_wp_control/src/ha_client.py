@@ -12,12 +12,53 @@ class HAClient:
         self._last_battery_soc = None
         self._last_success = time.time()
         self._consecutive_errors = 0
+        self._unavailable_since = None
 
     def is_connected(self):
         """Prüfe ob HA-Daten aktuell sind."""
         elapsed = time.time() - self._last_success
         timeout = self.config.ha_connection_timeout_min * 60
         return elapsed < timeout
+
+    def _handle_api_error(self, context, status_code=None, exception=None):
+        """Zentrale Fehlerbehandlung mit Eskalations-Logik."""
+        self._consecutive_errors += 1
+
+        if self._unavailable_since is None:
+            self._unavailable_since = time.time()
+
+        if self._consecutive_errors == 1:
+            # Erste Meldung als WARNING
+            if status_code:
+                self.log.warning(
+                    f"HA nicht erreichbar (HTTP {status_code}) "
+                    f"– warte auf Verfügbarkeit...")
+            else:
+                self.log.warning(
+                    f"HA nicht erreichbar ({exception}) "
+                    f"– warte auf Verfügbarkeit...")
+        elif self._consecutive_errors % 20 == 0:
+            # Alle 5 min (20 × 15s) ein Lebenszeichen
+            elapsed = int((time.time() - self._unavailable_since) / 60)
+            self.log.info(
+                f"HA weiterhin nicht erreichbar seit {elapsed} min "
+                f"(Errors: {self._consecutive_errors})")
+        else:
+            self.log.debug(
+                f"HA API Fehler ({context}): "
+                f"{status_code or exception} "
+                f"(Errors: {self._consecutive_errors})")
+
+    def _handle_api_success(self):
+        """Recovery-Meldung nach Fehlern."""
+        if self._consecutive_errors > 0:
+            elapsed = int((time.time() - self._unavailable_since) / 60)
+            self.log.info(
+                f"HA wieder erreichbar nach {elapsed} min "
+                f"({self._consecutive_errors} Fehler)")
+        self._consecutive_errors = 0
+        self._unavailable_since = None
+        self._last_success = time.time()
 
     def get_pv_surplus(self):
         """PV Überschuss aus HA Entity lesen."""
@@ -42,27 +83,15 @@ class HAClient:
 
                 value = float(state)
                 self._last_value = value
-                self._last_success = time.time()
-                self._consecutive_errors = 0
+                self._handle_api_success()
                 return value
 
             else:
-                self._consecutive_errors += 1
-                self.log.warning(
-                    f"HA API Fehler: {response.status_code} "
-                    f"(Errors: {self._consecutive_errors})"
-                )
+                self._handle_api_error("PV", status_code=response.status_code)
                 return self._last_value
 
         except requests.exceptions.ConnectionError:
-            self._consecutive_errors += 1
-            if self._consecutive_errors <= 3:
-                self.log.debug("HA API nicht erreichbar")
-            else:
-                self.log.warning(
-                    f"HA API nicht erreichbar "
-                    f"(seit {self._consecutive_errors} Versuchen)"
-                )
+            self._handle_api_error("PV", exception="ConnectionError")
             return self._last_value
 
         except (ValueError, TypeError) as e:
@@ -70,8 +99,7 @@ class HAClient:
             return self._last_value
 
         except Exception as e:
-            self._consecutive_errors += 1
-            self.log.error(f"HA API Fehler: {e}")
+            self._handle_api_error("PV", exception=e)
             return self._last_value
 
     def get_battery_soc(self):
@@ -100,13 +128,11 @@ class HAClient:
 
                 value = int(float(state))
                 self._last_battery_soc = value
+                # Kein _handle_api_success() hier – wird bereits in get_pv_surplus() gemacht
                 return value
 
             else:
-                self.log.warning(
-                    f"HA Battery SOC Fehler: {response.status_code} "
-                    f"(Entity: {entity_id})"
-                )
+                self._handle_api_error("SOC", status_code=response.status_code)
                 return self._last_battery_soc
 
         except (ValueError, TypeError) as e:
@@ -116,5 +142,5 @@ class HAClient:
             return self._last_battery_soc
 
         except Exception as e:
-            self.log.debug(f"HA Battery SOC Lesefehler: {e}")
+            self._handle_api_error("SOC", exception=e)
             return self._last_battery_soc

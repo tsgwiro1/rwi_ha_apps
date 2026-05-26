@@ -1,7 +1,12 @@
 
 ## 📝 Change-log
 
-### v1.0.10 (aktuell)
+### v1.0.11 (aktuell)
+- **HA API Fehler-Eskalation:** Bei HA-Neustart nur noch 1 WARNING + Recovery-Meldung statt je 2 Zeilen pro 15s-Zyklus
+- **Ping-Pong Log-Erkennung:** Wiederholte Wechsel zwischen gleichen WARTEN-Gründen (z.B. "Stabilisierung"↔"PV zu tief", "Speicher voll"↔"Zu wenig Spielraum") werden auf DEBUG heruntergestuft
+- **SAFETY Hysterese:** Recovery nach Übertemperatur erst bei < 62°C (statt sofort bei < 65°C), verhindert Flapping an der Grenze
+
+### v1.0.10
 - startup_no_limit_s Default auf 1800s (30 min) – Kompressor hat nach langer Standzeit genug Zeit für Öl-Vorwärmung
 - Eliminiert Fehlstarts die durch zu kurzen Timeout (300s) verursacht wurden
 
