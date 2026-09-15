@@ -11,6 +11,17 @@ from fan import RaspiCM4IOBoardFanSensor
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("system_sensors")
 
+# Hardware des CM4-POE-UPS-BASE
+I2C_BUS = 10
+INA219_ADDR = 0x43
+
+# Lüfter: Mindestlast, sobald er läuft
+FAN_MIN_PERCENT = 20
+
+# Ladestand linear aus der Akkuspannung
+BAT_EMPTY_V = 3.0
+BAT_FULL_V = 4.2
+
 class SystemMonitor:
     def __init__(self, args):
         # Mapping der Argumente aus der run.sh
@@ -46,9 +57,9 @@ class SystemMonitor:
 
         # Hardware initialisieren
         # USV auf Bus 10, Adresse 0x43 (mit neuer Warnschwelle)
-        self.usv = INA219(bus=10, addr=0x43, low_bat_warning=self.low_bat_warning)
+        self.usv = INA219(bus=I2C_BUS, addr=INA219_ADDR, low_bat_warning=self.low_bat_warning)
         # Lüfter auf Bus 10, Adresse 0x2f (wird in fan.py definiert)
-        self.fan = RaspiCM4IOBoardFanSensor(busnum=10)
+        self.fan = RaspiCM4IOBoardFanSensor(busnum=I2C_BUS)
         
         # Zustandsspeicher für den Lüfter-Kickstart
         self.fan_is_on = False
@@ -70,7 +81,7 @@ class SystemMonitor:
         config_data = {
             "bat_v": {"name": "Battery Voltage", "unit": "V", "class": "voltage"},
             "bat_percent": {"name": "Battery", "unit": "%", "class": "battery"},
-            "bat_curr": {"name": "Battery Current", "unit": "mA", "class": "current"},
+            "bat_curr": {"name": "Battery Current", "unit": "mA", "class": "current", "state_class": "measurement"},
             "fan_speed": {"name": "Fan Speed", "unit": "rpm", "icon": "mdi:fan"}
         }
 
@@ -91,6 +102,7 @@ class SystemMonitor:
                     }
                 }
                 if "class" in info: payload["device_class"] = info["class"]
+                if "state_class" in info: payload["state_class"] = info["state_class"]
                 if "icon" in info: payload["icon"] = info["icon"]
                 
                 self.client.publish(topic, json.dumps(payload), retain=True)
@@ -131,7 +143,7 @@ class SystemMonitor:
                     if cpu_temp >= self.fan_max:
                         pwm = 100
                     else:
-                        pwm = 20 + (cpu_temp - self.fan_min) * (80 / (self.fan_max - self.fan_min))
+                        pwm = FAN_MIN_PERCENT + (cpu_temp - self.fan_min) * ((100 - FAN_MIN_PERCENT) / (self.fan_max - self.fan_min))
                     
                     if not self.fan_is_on:
                         if current_rpm < 50:
@@ -144,25 +156,34 @@ class SystemMonitor:
                 else:
                     logger.debug("Status: Temperatur in der Hysterese-Zone.")
                     if self.fan_is_on:
-                        logger.debug("Aktion: Lüfter war an -> lasse ihn auf Minimalstufe (20%) weiterlaufen.")
-                        pwm = 20
+                        logger.debug(f"Aktion: Lüfter war an -> lasse ihn auf Minimalstufe ({FAN_MIN_PERCENT}%) weiterlaufen.")
+                        pwm = FAN_MIN_PERCENT
+                    else:
+                        pwm = 0
                 self.fan.set_fan_speed_percentage(int(pwm))
                 logger.debug(f"Setze Fan PWM = {int(pwm)}%")
 
                 # --- Sensordaten sammeln ---
                 payload = {}
                 # Die Hardware-Abfragen erfolgen direkt über die importierten Klassen
-                if self.enabled_sensors["bat_v"]:
-                    payload["bat_v"] = round(self.usv.get_bus_voltage(), 3)
-                
-                if self.enabled_sensors["bat_percent"]:
+                # Bei einem Lesefehler wird None gesendet, Home Assistant zeigt dann "unbekannt"
+                if self.enabled_sensors["bat_v"] or self.enabled_sensors["bat_percent"]:
+                    # Spannung und Ladestand aus derselben Messung
                     v = self.usv.get_bus_voltage()
-                    # Einfache Annahme: 3.0V = 0%, 4.2V = 100% (muss ggf. kalibriert werden)
-                    p = max(0, min(100, (v - 3.0) / 1.2 * 100))
-                    payload["bat_percent"] = round(p, 1)
-                
+
+                    if self.enabled_sensors["bat_v"]:
+                        payload["bat_v"] = round(v, 3) if v is not None else None
+
+                    if self.enabled_sensors["bat_percent"]:
+                        if v is not None:
+                            p = max(0, min(100, (v - BAT_EMPTY_V) / (BAT_FULL_V - BAT_EMPTY_V) * 100))
+                            payload["bat_percent"] = round(p, 1)
+                        else:
+                            payload["bat_percent"] = None
+
                 if self.enabled_sensors["bat_curr"]:
-                    payload["bat_curr"] = round(self.usv.get_current(), 1)
+                    c = self.usv.get_current()
+                    payload["bat_curr"] = round(c, 1) if c is not None else None
                 
                 if self.enabled_sensors["fan_speed"]:
                     payload["fan_speed"] = self.fan.fan_speed()

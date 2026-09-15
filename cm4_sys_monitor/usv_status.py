@@ -3,50 +3,76 @@ import logging
 
 logger = logging.getLogger("usv_driver")
 
+# Register des INA219
+REG_CONFIG = 0x00
+REG_BUSVOLTAGE = 0x02
+REG_CURRENT = 0x04
+REG_CALIBRATION = 0x05
+
+# Kalibrierung für 16 V / 5 A an einem Shunt von 0,01 Ohm (Waveshare-Demo zum CM4-POE-UPS-BASE)
+CALIBRATION = 26868
+CURRENT_LSB_MA = 0.1524
+BUS_VOLTAGE_LSB_V = 0.004
+
+# Config: 16V Range, Gain /2 (80 mV), Bus- und Shunt-ADC 12 Bit mit 32 Samples, Continuous Mode
+CONFIG = (0x0 << 13) | (0x1 << 11) | (0xD << 7) | (0xD << 3) | 0x7  # = 0x0EEF
+
+
 class INA219:
-    def __init__(self, bus=10, addr=0x43, low_bat_warning=3.0):
+    def __init__(self, bus, addr, low_bat_warning):
         self.addr = addr
         self.low_bat_warning = low_bat_warning
-        logger.info(f"INA219 initialisiert (Warnschwelle: {self.low_bat_warning}V)")
         try:
             self.bus = smbus.SMBus(bus)
-            # Kalibrierung für 16V / 5A (Werte aus deinem alten Code)
-            self.bus.write_word_data(self.addr, 0x05, 0x68EC) # 26868 in hex (lsb swapped für smbus)
-            # Config: 16V Range, Gain /2, 12-bit, Continuous Mode
-            self.bus.write_word_data(self.addr, 0x00, 0x3F07) # 0x073F swapped
+            self._write(REG_CALIBRATION, CALIBRATION)
+            self._write(REG_CONFIG, CONFIG)
+            logger.info(f"INA219 initialisiert (Kalibrierung: {self._read(REG_CALIBRATION):#06x}, "
+                        f"Konfiguration: {self._read(REG_CONFIG):#06x}, Warnschwelle: {self.low_bat_warning}V)")
         except Exception as e:
             logger.error(f"Fehler bei der Initialisierung des INA219: {e}")
             self.bus = None
 
+    def _read(self, reg):
+        # Der INA219 sendet das höherwertige Byte zuerst
+        data = self.bus.read_i2c_block_data(self.addr, reg, 2)
+        return (data[0] << 8) | data[1]
+
+    def _write(self, reg, value):
+        # Höherwertiges Byte zuerst; write_word_data würde das niedere zuerst senden
+        self.bus.write_i2c_block_data(self.addr, reg, [value >> 8, value & 0xFF])
+
+    def _ensure_calibration(self):
+        """Setzt Kalibrierung und Konfiguration neu, falls der Chip zurückgesetzt wurde."""
+        cal = self._read(REG_CALIBRATION)
+        if cal != CALIBRATION:
+            logger.warning(f"INA219 Kalibrierung {cal:#06x} statt {CALIBRATION:#06x} gelesen – setze neu.")
+            self._write(REG_CALIBRATION, CALIBRATION)
+            self._write(REG_CONFIG, CONFIG)
+
     def get_bus_voltage(self):
-        if not self.bus: return 0.0
+        """Busspannung in V, None bei einem Lesefehler."""
+        if not self.bus: return None
         try:
-            # Register 0x02: Bus Voltage
-            raw = self.bus.read_word_data(self.addr, 0x02)
-            # Swap bytes und schiebe um 3 Bits (INA219 Spezifikation)
-            val = ((raw << 8) & 0xFF00) | (raw >> 8)
-            voltage = (val >> 3) * 0.004
-            
+            self._ensure_calibration()
+            # Die Spannung steht in den oberen 13 Bits
+            voltage = (self._read(REG_BUSVOLTAGE) >> 3) * BUS_VOLTAGE_LSB_V
+
             if voltage < self.low_bat_warning:
-                logger.warning(f"Kritische Batteriespannung detektiert: {voltage:.2f}V! (Schwelle: {self.low_bat_warning}V)")
-                
-            return round(voltage, 1)
+                logger.warning(f"Kritische Batteriespannung detektiert: {voltage:.3f}V! (Schwelle: {self.low_bat_warning}V)")
+
+            return voltage
         except Exception as e:
             logger.error(f"Fehler beim Auslesen der Bus-Spannung: {e}")
-            return 0.0
+            return None
 
     def get_current(self):
-        if not self.bus: return 0.0
+        """Akkustrom in mA, positiv beim Entladen; None bei einem Lesefehler."""
+        if not self.bus: return None
         try:
-            # Register 0x04: Current
-            raw = self.bus.read_word_data(self.addr, 0x04)
-            val = ((raw << 8) & 0xFF00) | (raw >> 8)
-            if val > 32767: val -= 65535
-            current = val * 0.1524
-            # Rauschunterdrückung (Deadband Filter): Ignoriere Werte unter 5 mA
-            if abs(current) < 5.0:
-               return 0.0
-            return current
+            self._ensure_calibration()
+            val = self._read(REG_CURRENT)
+            if val > 32767: val -= 65536
+            return val * CURRENT_LSB_MA
         except Exception as e:
             logger.error(f"Fehler beim Auslesen des Stroms: {e}")
-            return 0.0
+            return None
