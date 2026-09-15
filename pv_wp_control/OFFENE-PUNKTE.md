@@ -105,3 +105,41 @@ auf `config.yaml` verweisen.
 **Stand 2026-09-15, App-Chat – V1.1.0:** Die Adresse steht nicht mehr in
 `config.yaml`, `src/config.py` und der README-Tabelle (dort «Pflicht»). Die
 übrigen Vorgaben im README folgen mit der Doku-Überarbeitung.
+
+**Stand 2026-09-15, App-Chat – Doku:** *Erledigt.* Das README nennt keine
+Vorgaben, Bereiche und Intervalle mehr und verweist auf `config.yaml`,
+`DEFAULT_PARAMS`, `src/mqtt_handler.py` und die Konstanten.
+
+---
+
+## 2026-09-15 – aus dem App-Chat: `ha_connection_timeout_min` löst keine Abschaltung aus
+
+Beim Überarbeiten des README gefunden. `main.py` übergibt der Zustandsmaschine
+`ha_connected` (aus `HAClient.is_connected()`, also nach
+`ha_connection_timeout_min`), `StateMachine.evaluate()` wertet es aber nicht
+aus. Bleiben die Daten von HA aus, rechnet die Steuerung mit dem letzten
+PV-Wert weiter – auch in BETRIEB.
+
+Das README beschrieb «dann ABSCHALT», `translations/*.yaml` beschreiben die
+Option noch als «bevor Abschaltung». Das README ist korrigiert, die
+translations nicht, weil sie mit der Entscheidung zusammenhängen:
+
+1. **Abschaltung einbauen:** In BETRIEB/ABREGELUNG bei `ha_connected = False`
+   → ABSCHALT, in WARTEN kein Start. Minor-Version.
+2. **Nur Anzeige:** Die Option bleibt ohne Wirkung auf die Steuerung, die
+   translations werden an den Text im README angepasst. Patch-Version.
+
+## 2026-09-15 – aus dem App-Chat: zurückgestellte Punkte aus der Planung
+
+Beim Plan für V1.0.12 bis Doku notiert, bewusst nicht umgesetzt. Vorlage ist
+`cm4_sys_monitor` V2.1.0:
+
+- `Dockerfile`: Base-Image mit festem Alpine-Tag statt `latest`.
+- `paho-mqtt` 1.6.1 → 2.x.
+- Discovery nach einem Neustart von HA erneut senden (`homeassistant/status`).
+- Watchdog der App ist auf HA ausgeschaltet; das README empfiehlt ihn.
+- Nach dem Start bleibt die Zustandsmaschine bei aktiver Sicherheitssperre in
+  AUS statt WARTEN, obwohl der Modus «PV Überschuss» ist. Funktional ohne
+  Folge, in der Anzeige aber irreführend.
+- `dashboard.yaml`: Anzeigebereich und Farbschwellen der Temperaturanzeige sind
+  feste Zahlen. Darstellung, keine Parameter – bewusst stehen gelassen.
