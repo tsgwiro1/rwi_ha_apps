@@ -1,62 +1,152 @@
-# CM4 System Monitor für Home Assistant
+# CM4 System Monitor
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version: 2.1.0](https://img.shields.io/badge/Version-2.1.0-blue.svg)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-App-41bdf5?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 
-Dieses Home Assistant Add-on überwacht die Hardware eines Raspberry Pi Compute Module 4 (CM4) in Kombination mit einem IO-Board (z. B. Waveshare CM4-POE-UPS-BASE). Es liest Sensordaten via I2C aus, steuert den Lüfter intelligent und sendet alle relevanten Statusdaten (Batteriespannung, Strom, Lüfter-RPM) per MQTT an Home Assistant.
+> Regelt den Lüfter und meldet Akkuspannung, Ladestand, Akkustrom und
+> Lüfterdrehzahl eines Raspberry Pi Compute Module 4 auf dem Waveshare
+> CM4-POE-UPS-BASE – als App direkt in Home Assistant, per MQTT-Discovery.
 
-Dank MQTT Auto-Discovery werden alle Sensoren in Home Assistant automatisch als Geräte angelegt – es ist kein manuelles YAML-Schreiben in der Home Assistant Konfiguration nötig!
+---
 
-## 🌟 Features
+## ⚠️ Haftungsausschluss (Disclaimer)
 
-- **USV Überwachung:** Auslesen des INA219 Chips für Batteriespannung (V), aktuellen Stromverbrauch (mA) und errechneten Batteriestand (%).
-- **Intelligente Lüftersteuerung:** Automatische, stufenlose Anpassung der Geschwindigkeit (EMC2301 Chip). Inklusive intelligenter Kickstart-Funktion (nur bei Stillstand) und konfigurierbarer Hysterese, um ständiges Ein- und Ausschalten zu verhindern.
-- **Ressourcenschonend:** Schlankes Alpine-Linux Docker Image mit direkter I2C-Ansprache via `smbus2` (ohne Subprozesse).
-- **Home Assistant UI:** Alle Sensoren und Parameter können bequem über die Add-on Optionen konfiguriert werden.
+Privates Projekt, Verwendung **auf eigene Gefahr**. Es wird keinerlei Haftung für
+Schäden an Hardware, Haustechnik oder Daten übernommen.
 
-## 🛠️ Voraussetzungen
+Die App **steuert den Lüfter** des Rechners, auf dem Home Assistant selbst läuft,
+und schreibt dafür über I²C direkt in die Register von Lüfterregler und
+Strommesser. Insbesondere:
 
-1. **Hardware:** Ein Raspberry Pi CM4 mit entsprechendem IO-Board (mit INA219 und EMC2301 Chips auf dem I2C Bus).
-2. **I2C Aktivierung:** Der I2C-Bus muss im Home Assistant OS (Host-System) aktiviert sein.
-3. **MQTT Broker:** Ein laufender MQTT Broker (z. B. das offizielle Mosquitto Add-on) im Home Assistant.
+* **Kühlung:** Zu hoch gesetzte Temperaturgrenzen lassen den Lüfter zu spät
+  anlaufen. Nach einem Neustart des Boards regelt niemand, bis die App läuft.
+* **Akkuwerte** sind Näherungen, der Ladestand ist aus der Spannung geschätzt.
+  Sie ersetzen keine Abschaltung, die bei leerem Akku zuverlässig greift.
+* Keine geprüfte Software, keine Gewähr für Richtigkeit oder Vollständigkeit von
+  Code und Dokumentation.
 
-## 📦 Installation
+---
 
-1. Navigiere in Home Assistant zu **Einstellungen** -> **Add-ons**.
-2. Klicke unten rechts auf **Add-on Store**.
-3. Klicke oben rechts auf die drei Punkte (⋮) und wähle **Repositories**.
-4. Füge die URL dieses Repositories hinzu: `https://github.com/tsgwiro1/rwi_ha_apps`
-5. Schließe das Fenster und lade die Seite neu.
-6. Scrolle nach unten zur neuen Kategorie und installiere den **CM4 System Monitor**.
+## 📖 Inhalt
 
-## ⚙️ Konfiguration
+- [Das Problem](#-das-problem)
+- [Die Lösung](#-die-lösung)
+- [Was sie leistet – und was nicht](#-was-sie-leistet--und-was-nicht)
+- [Aufbau](#-aufbau)
+- [Installation](#-installation)
+- [Die Sensoren](#-die-sensoren)
+- [Dokumentation](#-dokumentation)
+- [Herkunft](#-herkunft)
+- [Lizenz](#-lizenz)
 
-Nach der Installation musst du das Add-on im Reiter **Konfiguration** anpassen. Die Vorgabewerte und Grenzen stehen in der [`config.yaml`](config.yaml) und erscheinen dort beim ersten Öffnen.
+---
 
-| Option | Typ | Beschreibung |
+## 🚨 Das Problem
+
+Das Waveshare CM4-POE-UPS-BASE macht aus einem CM4 einen kleinen Server mit PoE
+und Akkupufferung. Dafür hat es zwei eigene Chips: einen Lüfterregler (EMC2301)
+und einen Strommesser für den Akku (INA219).
+
+Läuft darauf Home Assistant OS, bleiben beide ungenutzt:
+
+1. **Der Lüfter wird nicht geregelt.** Home Assistant OS lädt keinen Treiber für
+   den Lüfterregler (auf dieser Installation geprüft).
+2. **Der Akku ist unsichtbar.** Ob der Rechner gerade auf Akku läuft und wie
+   lange noch, sieht Home Assistant nicht.
+3. **Die Integration System Monitor** liefert CPU-Temperatur, Last und Speicher,
+   aber nichts aus diesen beiden Chips.
+
+## ✅ Die Lösung
+
+Eine App auf Home Assistant selbst. Sie liest die Chips über I²C, regelt den
+Lüfter nach der CPU-Temperatur und meldet die Werte über den MQTT-Broker. Per
+**MQTT-Discovery** meldet sie sich als Gerät an – in Home Assistant ist nichts
+von Hand einzutragen.
+
+| | |
+| :--- | :--- |
+| 🌀 **Lüfter** | Regelung nach CPU-Temperatur mit Hysterese und Anlaufhilfe, Drehzahl als Sensor |
+| 🔋 **Akku** | Spannung, Ladestand und Strom aus dem INA219 |
+
+## ⚖️ Was sie leistet – und was nicht
+
+**Leistet:** Eine Meldung je Intervall mit allen Werten, ein Gerät mit vier
+Entitäten. Wird die App gestoppt, zeigen die Entitäten sofort «nicht
+verfügbar», und der Lüfter läuft voll. Ist der Broker weg, regelt sie den Lüfter
+trotzdem weiter.
+
+**Leistet nicht:** Herunterfahren bei leerem Akku. Die App meldet die Werte; was
+daraus folgt, entscheidet eine Automation in Home Assistant.
+
+**Leistet auch nicht:** CPU-Temperatur, Last oder Speicher als Entitäten – das
+liefert die Integration System Monitor. Und keine Restlaufzeit: Der Ladestand
+ist aus der Spannung geschätzt.
+
+> ⚠️ **Nur für dieses Board.** Die App setzt den EMC2301 und den INA219 des
+> Waveshare CM4-POE-UPS-BASE an ihren festen Adressen voraus.
+
+## 🧱 Aufbau
+
+```
+┌──────────── Waveshare CM4-POE-UPS-BASE, Home Assistant OS ────────────┐
+│                                                                       │
+│  CPU-Temperatur ──────────────┐                                       │
+│                               ▼                                       │
+│  EMC2301 (Bus 10, 0x2f) ◀──▶ App «CM4 System Monitor»                 │
+│  Lüfter: PWM, Drehzahl        ▲                                       │
+│                               │                                       │
+│  INA219  (Bus 10, 0x43) ──────┘                                       │
+│  Akku: Spannung, Strom                                                │
+│                                                                       │
+└───────────────────────────────┬───────────────────────────────────────┘
+                                │ MQTT, einmal je Intervall
+                                ▼
+                     MQTT-Broker ──▶ Home Assistant
+```
+
+## 🚀 Installation
+
+Voraussetzungen: Home Assistant OS auf dem CM4 mit diesem Board, der I²C-Bus als
+`/dev/i2c-10`, ein MQTT-Broker und die MQTT-Integration in Home Assistant.
+
+1. Dieses Repository in Home Assistant hinzufügen, wie im
+   [Repository-README](../README.md#repository-in-home-assistant-hinzufügen)
+   beschrieben. Alternativ den Ordner nach `/addons/cm4_sys_monitor/` kopieren;
+   die App erscheint dann unter den lokalen Apps.
+2. **CM4 System Monitor** installieren und im Reiter **Konfiguration** Broker,
+   Benutzername und Passwort eintragen. Alle Optionen erklärt [DOCS.md](DOCS.md).
+3. Starten. Im Log erscheinen `INA219 initialisiert (Kalibrierung: 0x68f4, …)`
+   und `MQTT verbunden`.
+4. **Beim Booten starten** und **Watchdog** einschalten.
+
+Danach erscheint in Home Assistant unter *MQTT* ein neues Gerät.
+
+## 📡 Die Sensoren
+
+| Sensor | Einheit | Hinweis |
 | :--- | :--- | :--- |
-| `hostname` | String | Die IP-Adresse oder Hostname deines MQTT Brokers. |
-| `port` | Integer | Der Port deines MQTT Brokers. |
-| `username` | String | Der Benutzername für den MQTT Broker. |
-| `password` | String | Das Passwort für den MQTT Broker. |
-| `devicename` | String | Interner Name für das MQTT Gerät. |
-| `clientid` | String | Eindeutige MQTT Client ID (optional, leer = zufällige ID). |
-| `fanmintemp` | Integer | CPU Temp (°C), ab der der Lüfter mit Mindestlast anläuft. |
-| `fanmaxtemp` | Integer | CPU Temp (°C), bei der der Lüfter auf 100% dreht. |
-| `interval` | Integer | Zeit in Sekunden zwischen den Sensor-Updates. |
-| `bat_v`, `bat_percent`... | Boolean | Schalter zum Aktivieren/Deaktivieren einzelner Sensoren. |
-| `log_level` | Dropdown | Detailgrad der Protokolle. `info` für Normalbetrieb, `debug` für detaillierte Fehlersuche und Live-Analyse. |
-| `fan_hysteresis` | Float | Pufferzone in °C. Verhindert, dass der Lüfter an der Temperaturgrenze ständig an- und ausgeht. |
+| Akkuspannung | V | drei Nachkommastellen |
+| Ladestand | % | aus der Spannung geschätzt |
+| Akkustrom | mA | positiv beim Entladen, mit Langzeitstatistik |
+| Lüfterdrehzahl | rpm | |
 
-Speichere die Konfiguration, aktiviere "Beim Booten starten" (Start on boot) sowie "Watchdog" und starte das Add-on!
+Jeder lässt sich einzeln abschalten und verschwindet dann aus Home Assistant.
 
-## 🐞 Fehlerbehebung / Logs
+## 📚 Dokumentation
 
-Wenn sich das System unerwartet verhält oder keine Daten ankommen:
-1. Stelle den `log_level` in der Konfiguration auf `debug` und starte das Add-on neu.
-2. Prüfe den Reiter **Protokolle**. Dort siehst du nun jeden einzelnen Entscheidungsschritt des Skripts (z. B. warum der Lüfter gerade läuft oder nicht) sowie detaillierte I2C- und MQTT-Meldungen.
-3. Vergiss nicht, das Loglevel nach der Fehlersuche wieder auf `info` zurückzustellen, um das System zu entlasten.
+| Datei | Inhalt |
+| :--- | :--- |
+| [DOCS.md](DOCS.md) | Optionen, Lüfterregelung, MQTT und Entitäten, Genauigkeit der Akkuwerte, Datenlast, Fehlerbehebung, bekannte Punkte, Herkunft. In Home Assistant im Reiter **Dokumentation**. |
+| [CHANGELOG.md](CHANGELOG.md) | Was sich je Version geändert hat, und warum |
+
+## 🧬 Herkunft
+
+Kalibrierung und Umrechnung des INA219 stammen aus der Demo von Waveshare zum
+[CM4-POE-UPS-BASE](https://www.waveshare.com/wiki/CM4-POE-UPS-BASE). Lüfterregelung,
+MQTT-Anbindung und App sind eigener Code. Einzelheiten in
+[DOCS.md](DOCS.md#9-herkunft).
 
 ## 📄 Lizenz
 
-Dieses Projekt steht unter der MIT-Lizenz. Siehe die Datei `LICENSE` für weitere Details.
+MIT – siehe [LICENSE](../LICENSE).

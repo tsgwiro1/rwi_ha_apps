@@ -389,3 +389,24 @@ nicht nachstellen, weil die Discovery gleich blieb. Die Reihenfolge ist im
 Offline-Test geprüft. Die Update-Anzeige in HA stand nach dem Update auf 2.1.0
 auf «2.0.4 installiert». Das lag an HA Core, nicht an der App: Der Supervisor
 meldete durchgehend 2.1.0. Um 19:00 zeigte HA wieder richtig `off`, 2.1.0.
+
+---
+
+## 2026-09-15, 19:15 – Doku nach system_sensor (App-Chat, ohne Versionssprung)
+
+Erledigt aus «Projektstand gegenüber system_sensor», Abschnitte Dokumentation,
+Lizenz und Herkunft sowie Versionierung:
+
+- **README** neu gegliedert: Haftungsausschluss, Problem, Lösung, was die App
+  leistet und was nicht, Aufbau, Installation, Sensoren, Dokumentation,
+  Herkunft, Lizenz. «App» statt «Add-on». Keine Vorgabewerte.
+- **`DOCS.md`** neu, erscheint in HA im Reiter Dokumentation: Funktionsprinzip,
+  Optionen, Lüfterregelung, MQTT und Entitäten, Genauigkeit der Akkuwerte mit
+  Messtabelle, Datenlast (gemessen), Fehlerbehebung, bekannte Punkte, Herkunft.
+- **CHANGELOG**: Verweis auf Keep a Changelog und SemVer, `[Unreleased]`,
+  deutsche Rubriken auch in 2.0.3, Link-Fussnoten für alle getaggten Versionen.
+  Zurückgenommene Punkte aus 2.0.2 und 2.0.3 sind markiert.
+
+Die Abhängigkeiten und HA/MQTT sind mit V2.1.0 erledigt. Damit ist der ganze
+Abschnitt abgearbeitet. Hinweis: `default_entity_id` wirkt nur für neu angelegte
+Entitäten. Die bestehenden Entity-IDs in HA bleiben, wie gewollt.
