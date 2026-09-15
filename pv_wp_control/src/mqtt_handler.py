@@ -1,11 +1,14 @@
 """MQTT Handler: Discovery, Publish, Subscribe."""
 
 import json
-import time
 import paho.mqtt.client as mqtt
 
 from config import VERSION, DEFAULT_PARAMS
 from param_store import ParamStore
+
+
+# So lange wartet das Beenden auf die Zustellung von "offline"
+MQTT_STOP_TIMEOUT_S = 2
 
 
 class MqttHandler:
@@ -14,50 +17,71 @@ class MqttHandler:
         self.log = log
         self.prefix = config.mqtt_topic_prefix
         self.disc_prefix = config.mqtt_discovery_prefix
+        self.availability_topic = f"{self.prefix}/availability"
+        # Home Assistant meldet hier "online", wenn es (neu) gestartet ist
+        self.ha_status_topic = f"{self.disc_prefix}/status"
 
         # Persistenter Parameter-Speicher
         self._store = ParamStore(DEFAULT_PARAMS, log)
 
         # MQTT Client
-        self.client = mqtt.Client(client_id="pvwp_control")
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,
+                                  client_id="pvwp_control")
         self.client.on_connect = self._on_connect
+        self.client.on_disconnect = self._on_disconnect
         self.client.on_message = self._on_message
 
         if config.mqtt_user:
             self.client.username_pw_set(config.mqtt_user, config.mqtt_password)
 
         # Last Will
-        self.client.will_set(
-            f"{self.prefix}/availability",
-            payload="offline",
-            retain=True
-        )
+        self.client.will_set(self.availability_topic, payload="offline",
+                             retain=True)
 
     def connect(self):
+        # Der Hintergrund-Thread verbindet und verbindet neu – auch wenn der
+        # Broker beim Start der App noch nicht erreichbar ist
         try:
-            self.client.connect(self.config.mqtt_host, self.config.mqtt_port, 60)
+            self.client.connect_async(self.config.mqtt_host,
+                                      self.config.mqtt_port)
             self.client.loop_start()
-            self.log.info(f"MQTT verbunden: {self.config.mqtt_host}:{self.config.mqtt_port}")
+            self.log.info(f"MQTT: verbinde mit "
+                          f"{self.config.mqtt_host}:{self.config.mqtt_port}")
         except Exception as e:
             self.log.error(f"MQTT Verbindung fehlgeschlagen: {e}")
 
     def disconnect(self):
-        self.client.loop_stop()
         self.client.disconnect()
+        self.client.loop_stop()
 
-    def _on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
-            self.log.info("MQTT: Verbunden, subscribing...")
-            client.subscribe(f"{self.prefix}/set/#")
-            client.publish(f"{self.prefix}/availability", "online", retain=True)
-        else:
-            self.log.error(f"MQTT: Verbindung fehlgeschlagen (rc={rc})")
+    def _on_connect(self, client, userdata, flags, reason_code, properties):
+        if reason_code.is_failure:
+            self.log.error(f"MQTT: Verbindung fehlgeschlagen ({reason_code})")
+            return
+        self.log.info(f"MQTT verbunden: "
+                      f"{self.config.mqtt_host}:{self.config.mqtt_port}")
+        client.subscribe(f"{self.prefix}/set/#")
+        client.subscribe(self.ha_status_topic)
+        client.publish(self.availability_topic, "online", retain=True)
+        # Bei jeder Verbindung – auch ein Broker ohne Persistenz hat danach alles
+        self.publish_discovery()
+
+    def _on_disconnect(self, client, userdata, flags, reason_code, properties):
+        if reason_code.is_failure:
+            self.log.warning(
+                f"MQTT: Verbindung getrennt ({reason_code}), verbinde neu")
 
     def _on_message(self, client, userdata, msg):
         topic = msg.topic
         payload = msg.payload.decode('utf-8').strip()
 
         if not payload:
+            return
+
+        if topic == self.ha_status_topic:
+            if payload == 'online':
+                self.log.info("MQTT: Home Assistant online, sende Discovery")
+                self.publish_discovery()
             return
 
         try:
@@ -114,7 +138,10 @@ class MqttHandler:
                 )
 
     def publish_offline(self):
-        self.client.publish(f"{self.prefix}/availability", "offline", retain=True)
+        info = self.client.publish(self.availability_topic, "offline",
+                                   retain=True)
+        if info.rc == mqtt.MQTT_ERR_SUCCESS:
+            info.wait_for_publish(timeout=MQTT_STOP_TIMEOUT_S)
 
     def publish_discovery(self):
         """HA MQTT Auto-Discovery für alle Entities."""
@@ -130,18 +157,25 @@ class MqttHandler:
         sensors = [
             {"id": "state", "name": "Zustand", "icon": "mdi:state-machine"},
             {"id": "power_consumption", "name": "Leistungsaufnahme", "unit": "W",
-             "device_class": "power", "icon": "mdi:flash"},
+             "device_class": "power", "icon": "mdi:flash",
+             "state_class": "measurement"},
             {"id": "heat_output", "name": "Heizleistung", "unit": "W",
-             "device_class": "power", "icon": "mdi:fire"},
-            {"id": "cop", "name": "COP", "icon": "mdi:gauge"},
+             "device_class": "power", "icon": "mdi:fire",
+             "state_class": "measurement"},
+            {"id": "cop", "name": "COP", "icon": "mdi:gauge",
+             "state_class": "measurement"},
             {"id": "rl_extern", "name": "Speichertemperatur", "unit": "°C",
-             "device_class": "temperature", "icon": "mdi:thermometer"},
+             "device_class": "temperature", "icon": "mdi:thermometer",
+             "state_class": "measurement"},
             {"id": "rl_soll", "name": "Sollwert", "unit": "°C",
-             "device_class": "temperature", "icon": "mdi:thermometer-check"},
+             "device_class": "temperature", "icon": "mdi:thermometer-check",
+             "state_class": "measurement"},
             {"id": "pv_surplus", "name": "PV Überschuss", "unit": "W",
-             "device_class": "power", "icon": "mdi:solar-power"},
+             "device_class": "power", "icon": "mdi:solar-power",
+             "state_class": "measurement"},
             {"id": "active_limit", "name": "Aktives Limit", "unit": "W",
-             "icon": "mdi:speedometer"},
+             "icon": "mdi:speedometer",
+             "state_class": "measurement"},
             {"id": "runtime", "name": "Laufzeit", "unit": "min",
              "icon": "mdi:timer-outline"},
             {"id": "cooldown", "name": "Standzeit", "unit": "min",
@@ -149,9 +183,11 @@ class MqttHandler:
             {"id": "abregelung_timer", "name": "Abschalt-Timer", "unit": "min",
              "icon": "mdi:timer-alert-outline"},
             {"id": "energy_today", "name": "Energie heute", "unit": "kWh",
-             "device_class": "energy", "icon": "mdi:counter"},
+             "device_class": "energy", "icon": "mdi:counter",
+             "state_class": "total_increasing"},
             {"id": "battery_soc", "name": "Batteriestand", "unit": "%",
-             "device_class": "battery", "icon": "mdi:battery-charging-60"},
+             "device_class": "battery", "icon": "mdi:battery-charging-60",
+             "state_class": "measurement"},
         ]
 
         for sensor in sensors:
@@ -159,7 +195,7 @@ class MqttHandler:
                 "name": sensor["name"],
                 "unique_id": f"pvwp_{sensor['id']}",
                 "state_topic": f"{self.prefix}/{sensor['id']}",
-                "availability_topic": f"{self.prefix}/availability",
+                "availability_topic": self.availability_topic,
                 "device": device_info,
                 "icon": sensor.get("icon"),
             }
@@ -167,6 +203,8 @@ class MqttHandler:
                 config_payload["unit_of_measurement"] = sensor["unit"]
             if "device_class" in sensor:
                 config_payload["device_class"] = sensor["device_class"]
+            if "state_class" in sensor:
+                config_payload["state_class"] = sensor["state_class"]
 
             self.client.publish(
                 f"{self.disc_prefix}/sensor/pvwp/{sensor['id']}/config",
@@ -187,7 +225,7 @@ class MqttHandler:
                 "name": sensor["name"],
                 "unique_id": f"pvwp_{sensor['id']}",
                 "state_topic": f"{self.prefix}/{sensor['id']}",
-                "availability_topic": f"{self.prefix}/availability",
+                "availability_topic": self.availability_topic,
                 "payload_on": "ON",
                 "payload_off": "OFF",
                 "device_class": sensor.get("device_class"),
@@ -207,7 +245,7 @@ class MqttHandler:
             "state_topic": f"{self.prefix}/mode",
             "command_topic": f"{self.prefix}/set/mode",
             "options": ["Aus", "PV Überschuss", "Sofort"],
-            "availability_topic": f"{self.prefix}/availability",
+            "availability_topic": self.availability_topic,
             "device": device_info,
             "icon": "mdi:power-standby",
         }
@@ -250,7 +288,7 @@ class MqttHandler:
                 "min": num["min"],
                 "max": num["max"],
                 "step": num["step"],
-                "availability_topic": f"{self.prefix}/availability",
+                "availability_topic": self.availability_topic,
                 "device": device_info,
                 "icon": num.get("icon"),
             }
@@ -264,7 +302,6 @@ class MqttHandler:
             )
 
         # Aktuelle Parameter-Werte an MQTT publizieren (für HA UI Sync)
-        time.sleep(1)
         params = self._store.get_all()
         for key, value in params.items():
             self.client.publish(

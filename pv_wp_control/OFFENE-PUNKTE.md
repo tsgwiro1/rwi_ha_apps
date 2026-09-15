@@ -167,3 +167,44 @@ Beim Plan für V1.0.12 bis Doku notiert, bewusst nicht umgesetzt. Vorlage ist
   Folge, in der Anzeige aber irreführend.
 - `dashboard.yaml`: Anzeigebereich und Farbschwellen der Temperaturanzeige sind
   feste Zahlen. Darstellung, keine Parameter – bewusst stehen gelassen.
+
+**Stand 2026-09-15, App-Chat – Plattform analysiert, noch nicht umgesetzt:**
+
+- *Base-Image:* `latest` löst beim Bau derzeit auf Alpine 3.24.1 / Python 3.14.7
+  auf (Base 2026.08.0) und springt beim nächsten Neubau unangekündigt mit.
+  HA-Doku: Seit Supervisor 2026.04 kein `BUILD_FROM`, kein `build.yaml`;
+  empfohlen `FROM ghcr.io/home-assistant/base:<fest>` (Multi-Arch). Tags
+  vorhanden: `3.24`, `3.24-2026.08.0`. Installation per `pip
+  --break-system-packages` ins System-Python; cm4 nutzt venv + requirements.txt.
+- *pymodbus 3.6.9 → 3.15.0:* 3.8 erzwingt Schlüsselwort-Parameter
+  (`count=`), 3.10 ersetzt `slave=` durch `device_id=`. Betrifft jeden Aufruf in
+  `src/modbus_client.py`. Signaturen am Quellcode v3.15.0 geprüft; die übrigen
+  Brüche (Bit-Reihenfolge Coils, Datastore, TLS) betreffen die App nicht.
+  API-Brüche kommen bei pymodbus in Minor-Versionen → auf Minor pinnen.
+- *paho-mqtt 1.6.1 → 2.1.0:* `Client(CallbackAPIVersion.VERSION2, …)`,
+  `on_connect(client, userdata, flags, reason_code, properties)`. Vorlage cm4.
+- *Fehler gefunden:* `MqttHandler.connect()` ruft `loop_start()` nur nach
+  erfolgreichem `connect()`. Ist der Broker beim Start nicht erreichbar, bleibt
+  MQTT dauerhaft weg (keine Parameter, kein Status), die Regelung läuft weiter.
+  cm4 löst das mit `connect_async()` + `loop_start()`.
+- *Discovery nach HA-Neustart:* Heute retained und daher meist unkritisch.
+  Robuster: `<discovery_prefix>/status` = `online` abonnieren und Discovery,
+  Parameter und Status neu senden; ebenso bei jedem Reconnect.
+- *requests 2.31 → 2.34:* keine API-Änderung für `get(headers, timeout)`;
+  Sicherheitskorrekturen, Python ≥ 3.10.
+- *Nebenbefund:* Die Sensoren haben kein `state_class` → keine Langzeit-
+  Statistik, `energy_today` nicht fürs Energie-Dashboard nutzbar. Ergänzen
+  ändert keine Entity-IDs.
+
+**Stand 2026-09-15, App-Chat – V1.3.0:** Entschieden: zwei Schritte,
+`state_class` mitnehmen, Auftrag an cm4.
+
+- *Erledigt:* Base-Image `base:3.24`, venv + `requirements.txt`, paho-mqtt
+  2.1, requests 2.34, `connect_async()` gegen den MQTT-Fehlstart, Discovery bei
+  jeder Verbindung und bei HA `online`, «offline» beim Beenden zugestellt,
+  `state_class`.
+- *Offen – V1.4.0:* pymodbus 3.6.9 → 3.15 (`device_id=`, `count=`), vorher
+  Lesetest im Wegwerf-Container gegen die WP, erster ANLAUF gemeinsam
+  beobachten.
+- *Offen:* Watchdog auf HA einschalten (Einstellung, kein Code).
+

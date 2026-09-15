@@ -7,6 +7,24 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-15
+
+### Hinzugefügt
+
+- **`state_class` in der Discovery:** Leistungen, Temperaturen, COP, PV-Überschuss, Limit und Batteriestand als `measurement`, «Energie heute» als `total_increasing`. Home Assistant führt dafür eine Langzeitstatistik, «Energie heute» ist im Energie-Dashboard verwendbar. Entity-IDs bleiben unverändert.
+- Die Discovery wird bei jeder Verbindung zum Broker gesendet und erneut, wenn Home Assistant auf `<mqtt_discovery_prefix>/status` «online» meldet.
+
+### Geändert
+
+- **Base-Image fest:** `ghcr.io/home-assistant/base:3.24` statt `aarch64-base:latest`, das beim Neubau unangekündigt mitsprang. Seit Supervisor 2026.04 empfiehlt HA ein festes Multi-Arch-Image.
+- Python-Pakete in eigener venv, Versionen in `requirements.txt` statt im Dockerfile.
+- paho-mqtt 2.1 (Callback-API Version 2), requests 2.34. pymodbus bleibt 3.6.9 und folgt in einem eigenen Schritt.
+
+### Behoben
+
+- **MQTT nach Fehlstart:** War der Broker beim Start der App nicht erreichbar, blieb MQTT bis zum nächsten Neustart weg – keine Parameter, kein Status. Die Verbindung läuft jetzt über `connect_async()` im Hintergrund und wird neu aufgebaut.
+- Beim Beenden wartet die App auf die Zustellung von «offline», bevor sie die Verbindung trennt.
+
 ## [1.2.0] - 2026-09-15
 
 ### Hinzugefügt
@@ -214,7 +232,8 @@ Datum nicht überliefert.
 
 - Initiale Version.
 
-[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/pv_wp_control/v1.2.0...HEAD
+[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/pv_wp_control/v1.3.0...HEAD
+[1.3.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.3.0
 [1.2.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.2.0
 [1.1.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.1.0
 [1.0.12]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.0.12

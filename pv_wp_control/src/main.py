@@ -48,9 +48,8 @@ def main():
     safety = SafetyMonitor(config, log)
     sm = StateMachine(config, log)
 
-    # Start MQTT
+    # Start MQTT (die Discovery sendet der Handler bei jeder Verbindung)
     mqtt.connect()
-    mqtt.publish_discovery()
 
     # Tracking
     last_modbus_write = 0

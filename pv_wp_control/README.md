@@ -1,14 +1,14 @@
 # PV Wärmepumpen Steuerung
 
-[![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-blue.svg)](CHANGELOG.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
+[![Version: 1.3.0](https://img.shields.io/badge/Version-1.3.0-blue.svg)](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/LICENSE)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-App-41bdf5?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 
 Diese Home-Assistant-App steuert eine **Alpha Innotec Wärmepumpe** (Luxtronik 2.1) über **Modbus TCP** zur Optimierung des PV-Eigenverbrauchs. Bei Solarüberschuss wird der Kombispeicher über den Heizbetrieb geladen – vollautomatisch, mit Sicherheitsgrenzen und Schaltspielschutz.
 
 Dank MQTT-Discovery werden alle Sensoren und Steuerelemente in Home Assistant automatisch als Gerät angelegt – kein manuelles YAML nötig.
 
-> **Vorgaben und Grenzen** nennt diese Doku nicht. Die Vorgaben der App-Optionen stehen in [`config.yaml`](config.yaml) unter `options:`, die Startwerte der Dashboard-Parameter in `DEFAULT_PARAMS` in [`src/config.py`](src/config.py), die Bereiche der Regler in [`src/mqtt_handler.py`](src/mqtt_handler.py) und die festen Werte als Konstanten am Anfang der jeweiligen Datei in `src/`.
+> **Vorgaben und Grenzen** nennt diese Doku nicht. Die Vorgaben der App-Optionen stehen in [`config.yaml`](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/config.yaml) unter `options:`, die Startwerte der Dashboard-Parameter in `DEFAULT_PARAMS` in [`src/config.py`](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/src/config.py), die Bereiche der Regler in [`src/mqtt_handler.py`](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/src/mqtt_handler.py) und die festen Werte als Konstanten am Anfang der jeweiligen Datei in `src/`.
 
 ---
 
@@ -249,7 +249,7 @@ Die App überwacht laufend den tatsächlichen Zustand des Kompressors (läuft, w
 
 ### App-Optionen (selten geändert)
 
-Einzustellen in Home Assistant unter **Einstellungen → Apps → PV Wärmepumpen Steuerung → Konfiguration**. Die Vorgaben stehen in [`config.yaml`](config.yaml) unter `options:`. Fehlt eine Pflichtoption, startet die App nicht und nennt die fehlende Option im Log.
+Einzustellen in Home Assistant unter **Einstellungen → Apps → PV Wärmepumpen Steuerung → Konfiguration**. Die Vorgaben stehen in [`config.yaml`](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/config.yaml) unter `options:`. Fehlt eine Pflichtoption, startet die App nicht und nennt die fehlende Option im Log.
 
 | Bezeichnung | Option | Typ | Beschreibung |
 |---|---|---|---|
@@ -275,7 +275,7 @@ Einzustellen in Home Assistant unter **Einstellungen → Apps → PV Wärmepumpe
 
 ### Dashboard-Parameter (live anpassbar)
 
-Bereich und Schrittweite der Regler legt die Discovery in [`src/mqtt_handler.py`](src/mqtt_handler.py) fest, die Startwerte stehen in `DEFAULT_PARAMS` in [`src/config.py`](src/config.py).
+Bereich und Schrittweite der Regler legt die Discovery in [`src/mqtt_handler.py`](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/src/mqtt_handler.py) fest, die Startwerte stehen in `DEFAULT_PARAMS` in [`src/config.py`](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/src/config.py).
 
 | Parameter | Einheit | Beschreibung |
 |---|---|---|
@@ -301,6 +301,10 @@ Die Datei geht nur verloren, wenn die App mit «Daten löschen» deinstalliert w
 ---
 
 ## 📊 Entitäten (automatisch per MQTT-Discovery)
+
+Die App sendet die Discovery bei jeder Verbindung zum Broker und erneut, wenn Home Assistant auf `<mqtt_discovery_prefix>/status` «online» meldet. Beim Beenden meldet sie sich ab, die Entitäten zeigen dann «nicht verfügbar». Bricht die Verbindung ab, baut die App sie selbst wieder auf.
+
+Leistungen, Temperaturen, COP, PV-Überschuss, Limit und Batteriestand melden `state_class: measurement`, «Energie heute» `total_increasing`. Home Assistant führt dafür eine Langzeitstatistik, und «Energie heute» lässt sich im Energie-Dashboard verwenden.
 
 ### Sensoren
 
@@ -355,7 +359,7 @@ Die Datei geht nur verloren, wenn die App mit «Daten löschen» deinstalliert w
 | HR10040 | 0 / 1 | LPC-Modus: aus (ANLAUF) / Soft Limit (BETRIEB, ABREGELUNG) |
 | HR10041 | Limit / 100 | PC Limit (z. B. 12 = 1200 W) |
 
-Beim Reset schreibt die App alle fünf Register auf ihre Grundstellung zurück (`write_reset()` in [`src/modbus_client.py`](src/modbus_client.py)).
+Beim Reset schreibt die App alle fünf Register auf ihre Grundstellung zurück (`write_reset()` in [`src/modbus_client.py`](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/src/modbus_client.py)).
 
 ### Gelesene Register (Input Registers)
 
@@ -514,7 +518,8 @@ Die App bestätigt jeden übernommenen Wert auf `pvwp/<parameter>`.
 | Datei | Zweck |
 |---|---|
 | config.yaml | App-Metadaten, Optionen-Schema und Vorgaben |
-| Dockerfile | Container-Build |
+| Dockerfile | Container-Build (festes Base-Image, Python-venv) |
+| requirements.txt | Python-Abhängigkeiten |
 | run.sh | Startskript (die Optionen liest das Programm selbst) |
 | dashboard.yaml | Beispiel-View für das HA-Dashboard |
 | src/main.py | Hauptschleife und Orchestrierung |
@@ -535,4 +540,4 @@ Die App bestätigt jeden übernommenen Wert auf `pvwp/<parameter>`.
 
 ## 📄 Lizenz
 
-Dieses Projekt steht unter der MIT-Lizenz. Siehe [LICENSE](../LICENSE).
+Dieses Projekt steht unter der MIT-Lizenz. Siehe [LICENSE](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/LICENSE).

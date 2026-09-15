@@ -1,0 +1,4 @@
+# pymodbus bricht die API in Minor-Versionen, deshalb exakt gepinnt
+pymodbus==3.6.9
+paho-mqtt>=2.1,<3
+requests>=2.34,<3
