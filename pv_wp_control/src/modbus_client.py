@@ -148,6 +148,8 @@ class ModbusClient:
 
             self.client.write_register(10065, 0, slave=self.config.wp_slave_id)
             time.sleep(1.0)
+            self.client.write_register(10040, 0, slave=self.config.wp_slave_id)
+            time.sleep(1.0)
             self.client.write_register(10000, 1, slave=self.config.wp_slave_id)
             time.sleep(1.0)
             self.client.write_register(10001, fixwert_reg,
