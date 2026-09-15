@@ -1,43 +1,48 @@
-# 🛠️ RWI Home Assistant Add-ons
+# RWI Home Assistant Apps
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-App-41bdf5?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 
-Willkommen in meinem benutzerdefinierten Home Assistant Add-on Repository. Hier sammle und pflege ich selbst entwickelte Erweiterungen (Apps/Add-ons) für Home Assistant, die auf spezielle Hardware-Setups oder Automatisierungsbedürfnisse zugeschnitten sind.
-
-## 📦 Repository in Home Assistant hinzufügen
-
-Um die Add-ons aus diesem Repository in deinem Home Assistant zu nutzen, musst du diese URL als neue Quelle hinzufügen:
-
-1. Gehe in Home Assistant zu **Einstellungen** -> **Add-ons**.
-2. Klicke unten rechts auf den Button **Add-on Store**.
-3. Klicke oben rechts auf die drei Punkte (⋮) und wähle **Repositories**.
-4. Füge die URL dieses Repositories ein:
-   `https://github.com/tsgwiro1/rwi_ha_apps`
-5. Klicke auf **Hinzufügen** und lade die Seite neu. Die neuen Add-ons erscheinen nun ganz unten im Store.
+Selbst entwickelte Apps für Home Assistant, zugeschnitten auf die eigene
+Hardware und Haustechnik. Home Assistant nennt Add-ons seit Version 2026.2
+«Apps»; gemeint ist dasselbe.
 
 ---
 
-## 🚀 Verfügbare Add-ons
+## ⚠️ Haftungsausschluss (Disclaimer)
 
-Hier ist eine Übersicht der aktuell verfügbaren Add-ons in diesem Repository. Klicke auf den jeweiligen Namen, um zur ausführlichen Dokumentation zu gelangen.
-
-### [🖥️ CM4 System Monitor](./cm4_sys_monitor)
-Ein ressourcenschonendes, natives Add-on zur Überwachung eines Raspberry Pi Compute Module 4 (CM4) mit passendem IO-Board (z. B. Waveshare CM4-POE-UPS-BASE). 
-* **USV-Überwachung:** Liest Spannung (V) und Strom (mA) über den I2C-Bus (INA219 Chip) aus.
-* **Lüftersteuerung:** Steuert den angeschlossenen Lüfter temperaturgesteuert (EMC2301 Chip).
-* **Auto-Discovery:** Alle Werte werden vollautomatisch als Entitäten via MQTT im Home Assistant angelegt.
+Alle Inhalte dieses Repositorys sind private Projekte. Die Verwendung erfolgt
+ausdrücklich **auf eigene Gefahr**. Es wird keinerlei Haftung für Schäden an
+Geräten, Haustechnik oder Daten übernommen. Die Apps greifen direkt auf
+Hardware zu – I²C-Bus des Rechners, Modbus der Wärmepumpe – und laufen dafür
+teils mit erweiterten Rechten.
 
 ---
 
-### [☀️ PV Wärmepumpen Steuerung](./pv_wp_control)
-Ein intelligentes Add-on zur PV-Überschusssteuerung einer Alpha Innotec Wärmepumpe (Luxtronik 2.1) über Modbus TCP.
-* **PV-Überschusssteuerung:** Startet die Wärmepumpe automatisch bei Solarüberschuss und lädt den Kombispeicher über den Heizbetrieb.
-* **Leistungsbegrenzung:** Dynamisches Soft Limit folgt dem PV-Überschuss in Echtzeit.
-* **Kompressor-Überwachung:** Erkennt externe Starts/Stopps (Warmwasser, Abtauen, EVU-Sperre) und reagiert intelligent.
-* **Auto-Discovery:** Alle Sensoren und Steuerelemente werden vollautomatisch als Entitäten via MQTT im Home Assistant angelegt.
+## Repository in Home Assistant hinzufügen
+
+1. In Home Assistant **Einstellungen → Apps** öffnen und in den App-Store
+   wechseln.
+2. Oben rechts über die drei Punkte (⋮) **Repositories** wählen.
+3. Diese Adresse eintragen: `https://github.com/tsgwiro1/rwi_ha_apps`
+4. Hinzufügen und die Seite neu laden. Die Apps erscheinen im Store unter dem
+   Namen dieses Repositorys.
 
 ---
 
-## 📄 Lizenz
+## Repository-Struktur
 
-Alle Add-ons in diesem Repository stehen unter der [MIT-Lizenz](LICENSE), sofern im jeweiligen Unterordner nicht anders angegeben. Du kannst den Code gerne für deine eigenen Projekte nutzen, anpassen und weiterentwickeln.
+Monorepo: Jede App hat ihren eigenen Ordner mit README, CHANGELOG und eigener
+Version.
+
+| Ordner / App | Kurzbeschreibung | Status / Version |
+| :--- | :--- | :--- |
+| [**`cm4_sys_monitor`**](./cm4_sys_monitor) | Überwachung eines Raspberry Pi Compute Module 4 auf dem Waveshare CM4-POE-UPS-BASE. Liest Akkuspannung und -strom über den INA219, steuert den Lüfter temperaturabhängig über den EMC2301 und legt alle Werte per MQTT-Discovery als Entitäten in Home Assistant an. | v2.0.3 (Aktiv) |
+| [**`pv_wp_control`**](./pv_wp_control) | PV-Überschusssteuerung für eine Alpha-Innotec-Wärmepumpe (Luxtronik 2.1) über Modbus TCP. Startet die Wärmepumpe bei Solarüberschuss, führt die Leistungsbegrenzung dem Überschuss nach, erkennt fremde Starts und Stopps (Warmwasser, Abtauen, EVU-Sperre) und stellt Sensoren und Bedienelemente per MQTT-Discovery bereit. | v1.0.11 (Aktiv) |
+
+---
+
+## Lizenz
+
+Alle Apps stehen unter der [MIT-Lizenz](LICENSE), sofern im jeweiligen Ordner
+nicht anders angegeben.
