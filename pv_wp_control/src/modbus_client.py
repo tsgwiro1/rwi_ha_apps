@@ -49,8 +49,8 @@ class ModbusClient:
 
     def _read_input_register(self, address):
         try:
-            r = self.client.read_input_registers(address, 1,
-                                                  slave=self.config.wp_slave_id)
+            r = self.client.read_input_registers(address, count=1,
+                                                  device_id=self.config.wp_slave_id)
             if not r.isError():
                 return r.registers[0]
         except Exception as e:
@@ -146,19 +146,19 @@ class ModbusClient:
         try:
             fixwert_reg = int(fixwert_celsius * 10)
 
-            self.client.write_register(10065, 0, slave=self.config.wp_slave_id)
+            self.client.write_register(10065, 0, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
-            self.client.write_register(10040, 0, slave=self.config.wp_slave_id)
+            self.client.write_register(10040, 0, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
-            self.client.write_register(10000, 1, slave=self.config.wp_slave_id)
+            self.client.write_register(10000, 1, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
             self.client.write_register(10001, fixwert_reg,
-                                       slave=self.config.wp_slave_id)
+                                       device_id=self.config.wp_slave_id)
             time.sleep(1.0)
 
             # Verify
-            r = self.client.read_input_registers(10101, 1,
-                                                 slave=self.config.wp_slave_id)
+            r = self.client.read_input_registers(10101, count=1,
+                                                 device_id=self.config.wp_slave_id)
             if r and not r.isError():
                 actual_soll = r.registers[0] / 10
                 self.log.debug(f"Modbus write verify: SOLL={actual_soll:.1f}°C "
@@ -188,17 +188,17 @@ class ModbusClient:
             if limit_reg < 1:
                 limit_reg = 1
 
-            self.client.write_register(10065, 0, slave=self.config.wp_slave_id)
+            self.client.write_register(10065, 0, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
-            self.client.write_register(10000, 1, slave=self.config.wp_slave_id)
+            self.client.write_register(10000, 1, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
             self.client.write_register(10001, fixwert_reg,
-                                       slave=self.config.wp_slave_id)
+                                       device_id=self.config.wp_slave_id)
             time.sleep(1.0)
-            self.client.write_register(10040, 1, slave=self.config.wp_slave_id)
+            self.client.write_register(10040, 1, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
             self.client.write_register(10041, limit_reg,
-                                       slave=self.config.wp_slave_id)
+                                       device_id=self.config.wp_slave_id)
 
             self.log.debug(f"Modbus write: Fixwert={fixwert_celsius:.1f}°C "
                           f"Limit={limit_w}W (HR10041={limit_reg})")
@@ -215,15 +215,15 @@ class ModbusClient:
             return False
 
         try:
-            self.client.write_register(10000, 0, slave=self.config.wp_slave_id)
+            self.client.write_register(10000, 0, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
-            self.client.write_register(10001, 0, slave=self.config.wp_slave_id)
+            self.client.write_register(10001, 0, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
-            self.client.write_register(10040, 0, slave=self.config.wp_slave_id)
+            self.client.write_register(10040, 0, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
-            self.client.write_register(10041, 300, slave=self.config.wp_slave_id)
+            self.client.write_register(10041, 300, device_id=self.config.wp_slave_id)
             time.sleep(1.0)
-            self.client.write_register(10065, 0, slave=self.config.wp_slave_id)
+            self.client.write_register(10065, 0, device_id=self.config.wp_slave_id)
 
             return True
 

@@ -208,3 +208,14 @@ Beim Plan für V1.0.12 bis Doku notiert, bewusst nicht umgesetzt. Vorlage ist
   beobachten.
 - *Offen:* Watchdog auf HA einschalten (Einstellung, kein Code).
 
+**Stand 2026-09-15, App-Chat – V1.4.0:** pymodbus 3.15.0, `device_id=` und
+`count=` in `src/modbus_client.py`. Lokal gegen einen pymodbus-Simulator
+getestet (read_all inkl. Vorzeichen, alle drei Schreibvorgänge mit
+Rücklesen, Server nicht erreichbar); auf HA im Wegwerf-Container nur lesend
+gegen die WP, Werte identisch mit der laufenden App.
+
+- *Offen:* Ersten echten ANLAUF mit 1.4.0 gemeinsam beobachten (Schreibpfad).
+- *Beobachtung:* pymodbus 3.15 meldet eine gescheiterte Verbindung als ERROR;
+  bei nicht erreichbarer WP stehen je Versuch zwei Fehlerzeilen im Log
+  (pymodbus und App). Kosmetisch, bei Bedarf in `src/logger.py` regeln.
+

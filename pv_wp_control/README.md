@@ -1,6 +1,6 @@
 # PV Wärmepumpen Steuerung
 
-[![Version: 1.3.0](https://img.shields.io/badge/Version-1.3.0-blue.svg)](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/CHANGELOG.md)
+[![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-blue.svg)](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/pv_wp_control/CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/LICENSE)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-App-41bdf5?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 

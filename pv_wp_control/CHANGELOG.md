@@ -7,6 +7,12 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-15
+
+### Geändert
+
+- **pymodbus 3.6.9 → 3.15.0.** Die Aufrufe in `src/modbus_client.py` folgen der neuen API: `device_id=` statt `slave=` (seit 3.10) und `count=` als Schlüsselwort (seit 3.8). Register, Werte und Ablauf sind unverändert. Der Sync-Client bringt seit 3.6.9 unter anderem einen Timeout beim Empfang, der eine Endlosschleife verhindert.
+
 ## [1.3.0] - 2026-09-15
 
 ### Hinzugefügt
@@ -232,7 +238,8 @@ Datum nicht überliefert.
 
 - Initiale Version.
 
-[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/pv_wp_control/v1.3.0...HEAD
+[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/pv_wp_control/v1.4.0...HEAD
+[1.4.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.4.0
 [1.3.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.3.0
 [1.2.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.2.0
 [1.1.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.1.0

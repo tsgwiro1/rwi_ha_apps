@@ -1,6 +1,6 @@
 name: "PV Wärmepumpen Steuerung"
 description: "PV-Überschusssteuerung für Alpha Innotec WP über Modbus TCP (SHI)"
-version: "1.3.0"
+version: "1.4.0"
 slug: "pv_wp_control"
 url: "https://github.com/tsgwiro1/rwi_ha_apps/tree/main/pv_wp_control"
 init: false
