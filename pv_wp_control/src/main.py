@@ -9,7 +9,7 @@ from logger import get_logger
 from modbus_client import ModbusClient
 from mqtt_handler import MqttHandler
 from ha_client import HAClient
-from state_machine import StateMachine, State, SOFORT_LIMIT_W
+from state_machine import StateMachine, State
 from safety import SafetyMonitor
 from config import Config, VERSION
 
@@ -167,12 +167,10 @@ def main():
                 elif sm.state in (State.ANLAUF, State.BETRIEB, State.ABREGELUNG):
                     params = mqtt.get_parameters()
                     rl_extern = modbus_data.get('rl_extern', 30.0) if modbus_data else 30.0
-                    pv_surplus_val = ha.get_pv_surplus() or 0
 
                     if sm.state == State.ANLAUF:
                         fixwert = params['max_temperature']
                         modbus.write_fixwert(fixwert)
-                        sm.active_limit_w = 0
 
                         if not _anlauf_logged:
                             log.info(
@@ -186,13 +184,8 @@ def main():
                         fixwert = min(rl_extern + params['offset'],
                                       params['max_temperature'])
 
-                        if params['mode'] == 'Sofort':
-                            limit_w = SOFORT_LIMIT_W
-                        else:
-                            limit_w = max(int(pv_surplus_val),
-                                          params['min_power'])
-
-                        sm.active_limit_w = limit_w
+                        # Das Limit berechnet allein die Zustandsmaschine
+                        limit_w = sm.active_limit_w
                         modbus.write_fixwert_with_limit(fixwert, limit_w)
 
                         # BETRIEB/ABREGELUNG Details nur auf DEBUG

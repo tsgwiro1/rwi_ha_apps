@@ -43,7 +43,7 @@ configuration:
     description: Wartezeit vor erneutem Verbindungsversuch (Sekunden)
   ha_connection_timeout_min:
     name: HA Verbindungs-Timeout
-    description: Max. Dauer ohne HA-Daten bevor Abschaltung (Minuten)
+    description: Max. Dauer ohne HA-Daten, danach Abschaltung im Modus PV Überschuss (Minuten)
   max_absolute_temperature:
     name: NOTAUS Temperatur
     description: Absolute Maximaltemperatur für Notabschaltung (°C)

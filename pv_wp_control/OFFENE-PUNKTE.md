@@ -129,6 +129,30 @@ translations nicht, weil sie mit der Entscheidung zusammenhängen:
 2. **Nur Anzeige:** Die Option bleibt ohne Wirkung auf die Steuerung, die
    translations werden an den Text im README angepasst. Patch-Version.
 
+**Stand 2026-09-15, App-Chat – geprüft, Entscheid: einbauen (Variante 1).**
+Noch nicht umgesetzt.
+
+- *Risiko heute:* Fällt die HA-API im BETRIEB aus, bleibt der letzte PV-Wert
+  stehen. Die Zustandsmaschine bleibt in BETRIEB, und `main.py` schreibt je
+  Schreibintervall `max(alter PV-Wert, min_power)` als Limit – bis
+  `max_temperature` erreicht ist. `max_temperature` und NOTAUS laufen über
+  Modbus und greifen weiter; ungeschützt sind Netzbezug und Batterie.
+- *Fehlauslösung unwahrscheinlich:* Recorder, 30 Tage bis 2026-09-15:
+  `sensor.solar_surplus_power` 28-mal `unavailable`, jedes Mal unter 6 s. In
+  10 Tagen ein HA-Neustart von rund 2 min. Beides liegt weit unter
+  `ha_connection_timeout_min`.
+- *Zweites Problem, gehört mit dazu:* `main.py` (Schreibzyklus) holt den
+  PV-Wert selbst und rechnet das Limit neu; die Formel steht dazu dreimal in
+  `state_machine.py`. Das Limit muss an einer Stelle entstehen, in der
+  Zustandsmaschine, auch beim Übergang ANLAUF → BETRIEB.
+- *Offen zu entscheiden:* Reaktion in ANLAUF/BETRIEB/ABREGELUNG direkt
+  ABSCHALT oder über ABREGELUNG mit `shutdown_delay`; Modus «Sofort» ausnehmen.
+
+**Stand 2026-09-15, App-Chat – V1.2.0:** *Erledigt.* Entschieden: direkt
+ABSCHALT, «Sofort» ausgenommen, zusammen mit der Vereinheitlichung des Limits
+(`StateMachine._limit_w()`, `main.py` übernimmt `sm.active_limit_w`).
+translations und README beschreiben das neue Verhalten.
+
 ## 2026-09-15 – aus dem App-Chat: zurückgestellte Punkte aus der Planung
 
 Beim Plan für V1.0.12 bis Doku notiert, bewusst nicht umgesetzt. Vorlage ist

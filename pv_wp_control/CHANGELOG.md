@@ -7,6 +7,17 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-15
+
+### Hinzugefügt
+
+- **Abschaltung ohne HA-Daten:** Liefert Home Assistant länger als `ha_connection_timeout_min` keinen gültigen PV-Wert, schaltet die Steuerung im Modus «PV Überschuss» aus ANLAUF, BETRIEB und ABREGELUNG direkt ab und startet aus WARTEN nicht. Bisher rechnete sie mit dem letzten PV-Wert weiter, bis `max_temperature` erreicht war. Der Modus «Sofort» braucht keine HA-Daten und bleibt unberührt.
+
+### Geändert
+
+- **Limit an einer Stelle:** Das Soft Limit berechnet nur noch die Zustandsmaschine, auch beim Übergang ANLAUF → BETRIEB und bei der Rückkehr aus ABREGELUNG. Der Schreibzyklus in `main.py` holte den PV-Wert bisher selbst bei HA ab und rechnete das Limit neu – an der Zustandsmaschine vorbei.
+- Beschreibung von `ha_connection_timeout_min` in `translations/` präzisiert.
+
 ## [1.1.0] - 2026-09-15
 
 ### Geändert
@@ -203,7 +214,8 @@ Datum nicht überliefert.
 
 - Initiale Version.
 
-[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/pv_wp_control/v1.1.0...HEAD
+[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/pv_wp_control/v1.2.0...HEAD
+[1.2.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.2.0
 [1.1.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.1.0
 [1.0.12]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.0.12
 [1.0.11]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.0.11

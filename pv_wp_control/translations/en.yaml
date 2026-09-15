@@ -43,7 +43,7 @@ configuration:
     description: Wait time before reconnection attempt (seconds)
   ha_connection_timeout_min:
     name: HA Connection Timeout
-    description: Max duration without HA data before shutdown (minutes)
+    description: Max duration without HA data before shutdown in PV surplus mode (minutes)
   max_absolute_temperature:
     name: Emergency Shutdown Temperature
     description: Absolute maximum temperature for emergency shutdown (°C)

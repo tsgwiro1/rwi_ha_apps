@@ -1,6 +1,6 @@
 # PV Wärmepumpen Steuerung
 
-[![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-blue.svg)](CHANGELOG.md)
+[![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-blue.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-App-41bdf5?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 
@@ -90,7 +90,7 @@ Beispiel mit `min_power` = 1000 W:
 | 1500 W | Limit = 1500 W |
 | 700 W | Limit = 1000 W (Minimum greift) |
 
-Im Modus **Sofort** gilt stattdessen `SOFORT_LIMIT_W` (praktisch unbegrenzt).
+Im Modus **Sofort** gilt stattdessen `SOFORT_LIMIT_W` (praktisch unbegrenzt). Das Limit berechnet allein die Zustandsmaschine; der Schreibzyklus übernimmt es.
 
 ---
 
@@ -107,12 +107,12 @@ stateDiagram-v2
     WARTEN --> BETRIEB : Übernahme externer Heizbetrieb
     WARTEN --> AUS : Mode = Aus
     ANLAUF --> BETRIEB : Kompressor läuft
-    ANLAUF --> ABSCHALT : Anlauf-Timeout
+    ANLAUF --> ABSCHALT : Anlauf-Timeout oder keine HA-Daten
     BETRIEB --> ABREGELUNG : PV unter Minimum
-    BETRIEB --> ABSCHALT : Max-Temp oder Mode = Aus
+    BETRIEB --> ABSCHALT : Max-Temp, Mode = Aus oder keine HA-Daten
     BETRIEB --> WARTEN : Kompressor extern gestoppt
     ABREGELUNG --> BETRIEB : PV erholt
-    ABREGELUNG --> ABSCHALT : Timer abgelaufen
+    ABREGELUNG --> ABSCHALT : Timer abgelaufen oder keine HA-Daten
     ABREGELUNG --> WARTEN : Kompressor extern gestoppt
     ABSCHALT --> AUS : Reset gesendet + Cooldown
 ```
@@ -145,6 +145,7 @@ Alle folgenden Bedingungen müssen gleichzeitig erfüllt sein:
 | 7 | Kompressor frei | Nicht extern belegt (WW, Abtauen) |
 | 8 | Keine EVU-Sperre / Abtauen | Betriebsart ≠ 3 und ≠ 4 |
 | 9 | Modbus verbunden | Verbindung steht |
+| 10 | HA-Daten aktuell | Letzter gültiger PV-Wert jünger als `ha_connection_timeout_min` |
 
 Ist Bedingung 6 nicht erfüllt – der Speicher liegt weniger als `offset` unter `max_temperature` –, wird **nicht gestartet** und «Zu wenig Spielraum» geloggt.
 
@@ -163,6 +164,7 @@ Ist Bedingung 6 nicht erfüllt – der Speicher liegt weniger als `offset` unter
 | ABREGELUNG | BETRIEB | PV >= `min_surplus` in `PV_ERHOLT_ZYKLEN` Messzyklen in Folge | Timer zurücksetzen |
 | ABREGELUNG | ABSCHALT | `shutdown_delay` abgelaufen | – |
 | BETRIEB/ABREGELUNG | WARTEN | Kompressor extern gestoppt | Reset, Cooldown starten |
+| ANLAUF/BETRIEB/ABREGELUNG | ABSCHALT | Keine HA-Daten seit `ha_connection_timeout_min` (nur Modus «PV Überschuss») | WARNING loggen |
 | Jeder aktive | ABSCHALT | Sicherheitsverletzung | Sofort |
 
 ---
@@ -183,7 +185,7 @@ Ist Bedingung 6 nicht erfüllt – der Speicher liegt weniger als `offset` unter
 | **Reset-Verifizierung** | Kompressor läuft `RESET_PRUEFUNG_S` nach dem Reset noch | WARNING-Log | Automatisch |
 | **Register-Refresh** | Register je Schreibintervall neu geschrieben | Werte verfallen nicht durch den Register-Timeout der WP | `modbus_refresh_s` |
 | **Modbus-Unterbruch** | Verbindung verloren | Neuer Versuch nach `modbus_retry_delay_s` | App-Option |
-| **HA-Unterbruch** | Kein PV-Wert von HA | Letzter Wert wird weiterverwendet; nach `ha_connection_timeout_min` gilt HA als getrennt, eine Abschaltung löst das derzeit **nicht** aus | App-Option |
+| **HA-Unterbruch** | Kein gültiger PV-Wert von HA seit `ha_connection_timeout_min` | Im Modus «PV Überschuss»: ABSCHALT aus ANLAUF/BETRIEB/ABREGELUNG, kein Start aus WARTEN. Bis dahin gilt der letzte Wert. Modus «Sofort» unberührt. | App-Option |
 | **Delta-Prüfung** | `max_temperature` − RL_ext < `offset` | Kein Start | Automatisch |
 
 ### Schaltspielschutz
@@ -239,7 +241,7 @@ Die App überwacht laufend den tatsächlichen Zustand des Kompressors (läuft, w
 |---|---|---|
 | **Aus** | Steuerung inaktiv. Kein Modbus-Schreiben, nur Monitoring. | Normaler WP-Betrieb ohne PV |
 | **PV Überschuss** | Vollautomatisch: Start bei PV, Stopp nach Verzögerung. | Standard-PV-Betrieb |
-| **Sofort** | WP sofort starten, Limit `SOFORT_LIMIT_W`. `max_temperature` gilt weiterhin. | Manueller Test, schnell laden |
+| **Sofort** | WP sofort starten, Limit `SOFORT_LIMIT_W`. `max_temperature` gilt weiterhin, HA-Daten sind nicht nötig. | Manueller Test, schnell laden |
 
 ---
 
@@ -265,7 +267,7 @@ Einzustellen in Home Assistant unter **Einstellungen → Apps → PV Wärmepumpe
 | Anlauf-Timeout | `startup_no_limit_s` | Integer | Max. Wartezeit auf den Kompressorstart (s) |
 | Technische Mindest-Standzeit | `wp_min_standzeit_min` | Integer | Minimale Pause zwischen Kompressorstarts (min) |
 | Modbus Retry Verzögerung | `modbus_retry_delay_s` | Integer | Wartezeit vor erneutem Verbindungsversuch (s) |
-| HA Verbindungs-Timeout | `ha_connection_timeout_min` | Integer | Dauer ohne HA-Daten, nach der HA als getrennt gilt (min) |
+| HA Verbindungs-Timeout | `ha_connection_timeout_min` | Integer | Max. Dauer ohne HA-Daten, danach Abschaltung im Modus «PV Überschuss» (min) |
 | NOTAUS Temperatur | `max_absolute_temperature` | Float | Absolute Maximaltemperatur für die Notabschaltung (°C) |
 | MQTT Topic Prefix | `mqtt_topic_prefix` | String | Prefix für alle MQTT-Topics |
 | MQTT Discovery Prefix | `mqtt_discovery_prefix` | String | Prefix für die HA-Discovery |
@@ -457,6 +459,7 @@ Die folgenden Angaben beruhen auf Herstellerangaben sowie eigenen Erkenntnissen 
 | MQTT rc=5 | Verbindung fehlgeschlagen (rc=5) | Benutzer/Passwort prüfen |
 | Kompressor extern gestoppt | Kompressor extern gestoppt! | Normal, der Cooldown läuft |
 | Kein Start wegen Delta | Zu wenig Spielraum | Speicher warm, warten |
+| Kein Start / Abschaltung ohne HA | Keine HA-Daten seit über … min | HA und `ha_entity_pv_surplus` prüfen; die App läuft weiter, sobald wieder Werte kommen |
 | Überhitzungs-Sperre | SAFETY: RL extern … >= … | Warten, bis RL extern `SICHERHEITS_HYSTERESE_K` unter `max_absolute_temperature` liegt |
 | EVU-Sperre blockiert Start | EVU-Sperre aktiv | Normal, auf Freigabe warten (erfahrungsgemäss ~60–90 min) |
 | Mehrere Fehlstarts | ANLAUF FEHLGESCHLAGEN, Fehlstarts=… | WP-interne Sperre, der Cooldown verlängert sich automatisch |

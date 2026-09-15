@@ -151,6 +151,12 @@ class StateMachine:
         self.active_limit_w = 0
         self._cooldown_logged = False
 
+    def _limit_w(self, mode, pv_surplus, min_power):
+        """Soft Limit für BETRIEB und ABREGELUNG – die einzige Stelle."""
+        if mode == 'Sofort':
+            return SOFORT_LIMIT_W
+        return max(int(pv_surplus), min_power)
+
     def _log_wait(self, reason, details):
         """WARTEN-Log: Grund-Wechsel auf INFO, Ping-Pong auf DEBUG."""
         now = time.time()
@@ -218,6 +224,7 @@ class StateMachine:
         safety_ok = inputs.get('safety_ok', True)
         safety_msg = inputs.get('safety_msg', '')
         modbus_connected = inputs.get('modbus_connected', False)
+        ha_connected = inputs['ha_connected']
 
         mode = params['mode']
         min_surplus = params['min_surplus']
@@ -353,6 +360,25 @@ class StateMachine:
             return
 
         # ============================================================
+        # HA-DATEN (nur Modus PV Überschuss; «Sofort» braucht sie nicht)
+        # ============================================================
+        if mode == 'PV Überschuss' and not ha_connected:
+            timeout_min = self.config.ha_connection_timeout_min
+            if self.state in (State.ANLAUF, State.BETRIEB, State.ABREGELUNG):
+                if self.state != State.ANLAUF:
+                    self._log_betrieb_summary()
+                self.log.warning(
+                    f"Keine HA-Daten seit über {timeout_min} min "
+                    f"({self.state.value}) → ABSCHALT")
+                self.state = State.ABSCHALT
+                return
+            if self.state == State.WARTEN:
+                self._log_wait("Keine HA-Daten",
+                    f"seit über {timeout_min} min, kein Start")
+                self._pv_start_time = 0
+                return
+
+        # ============================================================
         # STATE TRANSITIONS
         # ============================================================
 
@@ -454,10 +480,7 @@ class StateMachine:
                     return
 
                 elif betriebsart in (0, 6):
-                    if mode == 'Sofort':
-                        our_limit = SOFORT_LIMIT_W
-                    else:
-                        our_limit = max(int(pv_surplus), min_power)
+                    our_limit = self._limit_w(mode, pv_surplus, min_power)
 
                     if our_limit >= leistung_w:
                         self.log.info(
@@ -527,6 +550,7 @@ class StateMachine:
         # ----------------------------------------------------------
         elif self.state == State.ANLAUF:
             elapsed = time.time() - self._anlauf_start
+            self.active_limit_w = 0  # Anlauf ohne Soft Limit
 
             if kompressor_laeuft:
                 self.log.info(
@@ -535,6 +559,7 @@ class StateMachine:
                 self.state = State.BETRIEB
                 self._betrieb_start = time.time()
                 self._failed_starts = 0
+                self.active_limit_w = self._limit_w(mode, pv_surplus, min_power)
             elif elapsed > self.config.startup_no_limit_s:
                 self._failed_starts += 1
                 next_cooldown_min = int(
@@ -596,10 +621,7 @@ class StateMachine:
                         f"→ ABREGELUNG (#{self._abregelung_count})")
 
             # Limit nachführen
-            if mode == 'Sofort':
-                self.active_limit_w = SOFORT_LIMIT_W
-            else:
-                self.active_limit_w = max(int(pv_surplus), min_power)
+            self.active_limit_w = self._limit_w(mode, pv_surplus, min_power)
 
         # ----------------------------------------------------------
         elif self.state == State.ABREGELUNG:
@@ -627,6 +649,8 @@ class StateMachine:
                         f"(nach {elapsed_min:.1f} min) → BETRIEB")
                     self.state = State.BETRIEB
                     self._pv_recovered_count = 0
+                    self.active_limit_w = self._limit_w(
+                        mode, pv_surplus, min_power)
                     return
             else:
                 self._pv_recovered_count = 0
@@ -641,7 +665,7 @@ class StateMachine:
                 return
 
             # Limit nachführen (PV oder Minimum)
-            self.active_limit_w = max(int(pv_surplus), min_power)
+            self.active_limit_w = self._limit_w(mode, pv_surplus, min_power)
 
         # ----------------------------------------------------------
         elif self.state == State.ABSCHALT:
