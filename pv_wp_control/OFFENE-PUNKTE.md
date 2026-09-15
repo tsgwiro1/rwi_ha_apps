@@ -50,8 +50,7 @@ Zwei weitere Kleinigkeiten, beim Lesen aufgefallen:
   scheitert. Auf HA muss der Code nicht neu eingespielt werden, dort weichen
   nur noch `config.yaml` und CHANGELOG ab.
 - *Erledigt:* `url` in der `config.yaml` zeigt auf dieses Repository.
-- *Offen:* Vorgabe von `wp_ip` – kommt mit der Umstellung der Konfiguration
-  (nächster Punkt).
+- *Erledigt (V1.1.0):* `wp_ip` hat keine Vorgabe mehr.
 
 ---
 
@@ -76,6 +75,15 @@ Zu klären: Wird der Pfad über `/data/options.json` überhaupt noch gebraucht?
 `run.sh` übergibt die Optionen als Argumente. Wenn ja, die Rückfallwerte
 streichen oder aus einer Stelle beziehen; wenn nein, den Pfad entfernen.
 
+**Stand 2026-09-15, App-Chat – V1.1.0:**
+
+- *Erledigt:* Umgekehrt gelöst: Der Argument-Pfad ist weg, das Programm liest
+  nur noch `/data/options.json`, ohne Rückfallwerte. Fehlt eine Pflichtoption,
+  bricht es mit Meldung ab. `register_timeout_min` war unbenutzt und ist
+  entfernt, die Sicherheits-Hysterese steht einmal in `src/safety.py`.
+- *Erledigt:* Weitere Doppelungen im Code als Konstanten benannt, Dashboard-
+  Vorgaben nur noch in `DEFAULT_PARAMS`, `translations/` ohne Vorgaben.
+
 ## 2026-09-15 – aus dem Common-Chat: neue Repo-Konventionen
 
 Stehen jetzt in `CLAUDE.md` im Repo-Wurzelordner, hier nur der Hinweis:
@@ -93,3 +101,7 @@ Stehen jetzt in `CLAUDE.md` im Repo-Wurzelordner, hier nur der Hinweis:
 (Konfigurationstabelle, Spalte Vorgabe). Der neue Commit-Hook meldet sie, sobald
 eine dieser Zeilen geändert wird. Im README anonymisieren (`192.0.2.10`) oder
 auf `config.yaml` verweisen.
+
+**Stand 2026-09-15, App-Chat – V1.1.0:** Die Adresse steht nicht mehr in
+`config.yaml`, `src/config.py` und der README-Tabelle (dort «Pflicht»). Die
+übrigen Vorgaben im README folgen mit der Doku-Überarbeitung.

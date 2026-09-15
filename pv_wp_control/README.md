@@ -1,7 +1,7 @@
 # PV Wärmepumpen Steuerung
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 1.0.12](https://img.shields.io/badge/Version-1.0.12-blue.svg)](CHANGELOG.md)
+[![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-blue.svg)](CHANGELOG.md)
 [![HA Add-on](https://img.shields.io/badge/Home%20Assistant-Add--on-blue.svg)](https://www.home-assistant.io/)
 
 Dieses Home Assistant Add-on steuert eine **Alpha Innotec Wärmepumpe** (Luxtronik 2.1) über **Modbus TCP** zur Optimierung des PV-Eigenverbrauchs. Bei Solarüberschuss wird der Kombispeicher über den Heizbetrieb geladen – vollautomatisch, intelligent und sicher.
@@ -249,9 +249,9 @@ Das Add-on überwacht permanent den tatsächlichen Zustand des Kompressors (Leis
 |---|---|---|---|---|
 | MQTT Broker Adresse | mqtt_host | String | IP oder Hostname des MQTT Brokers | core-mosquitto |
 | MQTT Port | mqtt_port | Integer | Port des MQTT Brokers | 1883 |
-| MQTT Benutzername | mqtt_user | String | Benutzername für MQTT Authentifizierung | – |
-| MQTT Passwort | mqtt_password | String | Passwort für MQTT Authentifizierung | – |
-| Wärmepumpe IP-Adresse | wp_ip | String | IP-Adresse der Luxtronik Steuerung | 192.168.0.175 |
+| MQTT Benutzername | mqtt_user | String (optional) | Benutzername für MQTT Authentifizierung (leer = ohne Anmeldung) | – |
+| MQTT Passwort | mqtt_password | Passwort (optional) | Passwort für MQTT Authentifizierung | – |
+| Wärmepumpe IP-Adresse | wp_ip | String | IP-Adresse der Luxtronik Steuerung | – (Pflicht) |
 | Wärmepumpe Modbus Port | wp_port | Integer | Modbus TCP Port | 502 |
 | Modbus Slave ID | wp_slave_id | Integer | Slave ID der Wärmepumpe | 1 |
 | PV-Überschuss Entity | ha_entity_pv_surplus | String | HA Entity-ID die den PV-Überschuss in Watt liefert | sensor.solar_surplus_power |

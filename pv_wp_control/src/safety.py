@@ -1,3 +1,7 @@
+# Recovery nach NOTAUS erst so weit unter max_absolute_temperature
+SICHERHEITS_HYSTERESE_K = 3.0
+
+
 class SafetyMonitor:
     def __init__(self, config, log):
         self.config = config
@@ -19,7 +23,7 @@ class SafetyMonitor:
         if self._triggered:
             # Recovery erst unterhalb Hysterese-Schwelle
             recovery_temp = (self.config.max_absolute_temperature
-                             - self.config.safety_hysteresis)
+                             - SICHERHEITS_HYSTERESE_K)
             if rl_extern < recovery_temp:
                 self._triggered = False
                 return True, ""

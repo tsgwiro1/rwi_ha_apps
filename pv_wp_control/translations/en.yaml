@@ -7,7 +7,7 @@ configuration:
     description: Port of the MQTT broker
   mqtt_user:
     name: MQTT Username
-    description: Username for MQTT authentication
+    description: Username for MQTT authentication (empty = no login)
   mqtt_password:
     name: MQTT Password
     description: Password for MQTT authentication
@@ -16,10 +16,10 @@ configuration:
     description: IP address of the Luxtronik controller
   wp_port:
     name: Heat Pump Modbus Port
-    description: Modbus TCP port (default 502)
+    description: Modbus TCP port
   wp_slave_id:
     name: Modbus Slave ID
-    description: Slave ID of the heat pump (default 1)
+    description: Slave ID of the heat pump
   ha_entity_pv_surplus:
     name: PV Surplus Entity
     description: HA entity ID providing PV surplus in Watts

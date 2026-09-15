@@ -1,7 +1,27 @@
-"""Konfiguration laden aus Kommandozeilen-Argumenten (von run.sh)."""
+"""Konfiguration: App-Optionen aus /data/options.json, Version aus config.yaml."""
 
-import sys
+import json
 import os
+import sys
+
+# Home Assistant schreibt die App-Optionen hierher
+OPTIONS_PATH = '/data/options.json'
+
+# REST-API von Home Assistant über den Supervisor
+HA_URL = 'http://supervisor/core/api'
+
+# Dashboard-Parameter beim ersten Start; danach gilt /data/params.json
+DEFAULT_PARAMS = {
+    'mode': 'Aus',
+    'offset': 5.0,
+    'min_surplus': 800,
+    'shutdown_delay': 30,
+    'min_standzeit': 25,
+    'max_temperature': 55.0,
+    'min_power': 600,
+    'min_start_duration': 10,
+    'min_battery_soc': 0,
+}
 
 # Version aus config.yaml lesen (single source of truth)
 VERSION = "unknown"
@@ -16,89 +36,43 @@ if os.path.exists(_config_yaml_path):
 
 class Config:
     def __init__(self):
-        args = sys.argv
-
-        if len(args) < 21:
-            # Fallback: Lade aus /data/options.json (für lokalen Test)
-            self._load_from_options_file()
-            return
-
-        # Aus run.sh Argumenten
-        self.mqtt_host = args[1]
-        self.mqtt_port = int(args[2])
-        self.mqtt_user = args[3]
-        self.mqtt_password = args[4]
-        self.wp_ip = args[5]
-        self.wp_port = int(args[6])
-        self.wp_slave_id = int(args[7])
-        self.ha_entity_pv_surplus = args[8]
-        self.ha_entity_battery_soc = args[9]
-        self.modbus_refresh_s = int(args[10])
-        self.measurement_interval_s = int(args[11])
-        self.startup_no_limit_s = int(args[12])
-        self.wp_min_standzeit_min = int(args[13])
-        self.max_absolute_temperature = float(args[14])
-        self.mqtt_topic_prefix = args[15]
-        self.mqtt_discovery_prefix = args[16]
-        self.log_level = args[17]
-        self.ha_token = args[18]
-        self.ha_connection_timeout_min = int(args[19])
-        self.modbus_retry_delay_s = int(args[20])
-
-        # Fixed values
-        self.register_timeout_min = 15
-        self.ha_url = 'http://supervisor/core/api'
-        self.safety_hysteresis = 3.0  # °C (Recovery bei 62.0°C statt 65.0°C)
-
-    def _load_from_options_file(self):
-        """Fallback für lokalen Test."""
-        import json
-        import os
-
-        options_file = '/data/options.json'
-        if os.path.exists(options_file):
-            with open(options_file, 'r') as f:
+        try:
+            with open(OPTIONS_PATH, 'r') as f:
                 opts = json.load(f)
-        else:
-            opts = {}
+        except (OSError, json.JSONDecodeError) as e:
+            sys.exit(f"App-Optionen nicht lesbar ({OPTIONS_PATH}): {e}")
 
-        self.wp_ip = opts.get('wp_ip', '192.168.0.175')
-        self.wp_port = opts.get('wp_port', 502)
-        self.wp_slave_id = opts.get('wp_slave_id', 1)
-        self.ha_entity_pv_surplus = opts.get('ha_entity_pv_surplus',
-                                             'sensor.solar_surplus_power')
-        self.ha_entity_battery_soc = opts.get('ha_entity_battery_soc',
-                                              'sensor.battery_state_of_capacity')
-        self.modbus_refresh_s = opts.get('modbus_refresh_s', 60)
-        self.measurement_interval_s = opts.get('measurement_interval_s', 15)
-        self.startup_no_limit_s = opts.get('startup_no_limit_s', 180)
-        self.wp_min_standzeit_min = opts.get('wp_min_standzeit_min', 20)
-        self.register_timeout_min = opts.get('register_timeout_min', 15)
-        self.modbus_retry_delay_s = opts.get('modbus_retry_delay_s', 30)
-        self.ha_connection_timeout_min = opts.get('ha_connection_timeout_min', 5)
-        self.max_absolute_temperature = opts.get('max_absolute_temperature', 60.0)
-        self.mqtt_topic_prefix = opts.get('mqtt_topic_prefix', 'pvwp')
-        self.mqtt_discovery_prefix = opts.get('mqtt_discovery_prefix',
-                                              'homeassistant')
-        self.log_level = opts.get('log_level', 'info')
-        self.mqtt_host = os.environ.get('MQTT_HOST', 'localhost')
-        self.mqtt_port = int(os.environ.get('MQTT_PORT', '1883'))
-        self.mqtt_user = os.environ.get('MQTT_USER', '')
-        self.mqtt_password = os.environ.get('MQTT_PASSWORD', '')
-        self.ha_token = os.environ.get('SUPERVISOR_TOKEN', '')
-        self.ha_url = 'http://supervisor/core/api'
-        self.safety_hysteresis = 3.0  # °C (Recovery bei 62.0°C statt 65.0°C)
+        # Vorgaben stehen nur in config.yaml. Fehlt eine Pflichtoption,
+        # bricht das Programm ab, statt mit einem eigenen Wert zu laufen.
+        try:
+            self.mqtt_host = opts['mqtt_host']
+            self.mqtt_port = opts['mqtt_port']
+            self.wp_ip = opts['wp_ip']
+            self.wp_port = opts['wp_port']
+            self.wp_slave_id = opts['wp_slave_id']
+            self.ha_entity_pv_surplus = opts['ha_entity_pv_surplus']
+            self.ha_entity_battery_soc = opts['ha_entity_battery_soc']
+            self.modbus_refresh_s = opts['modbus_refresh_s']
+            self.measurement_interval_s = opts['measurement_interval_s']
+            self.startup_no_limit_s = opts['startup_no_limit_s']
+            self.wp_min_standzeit_min = opts['wp_min_standzeit_min']
+            self.modbus_retry_delay_s = opts['modbus_retry_delay_s']
+            self.ha_connection_timeout_min = opts['ha_connection_timeout_min']
+            self.max_absolute_temperature = opts['max_absolute_temperature']
+            self.mqtt_topic_prefix = opts['mqtt_topic_prefix']
+            self.mqtt_discovery_prefix = opts['mqtt_discovery_prefix']
+            self.log_level = opts['log_level']
+        except KeyError as e:
+            sys.exit(f"App-Option fehlt: {e.args[0]} – "
+                     f"in der Konfiguration der App setzen")
 
-    @property
-    def default_params(self):
-        return {
-            'mode': 'Aus',
-            'offset': 5.0,
-            'min_surplus': 800,
-            'shutdown_delay': 30,
-            'min_standzeit': 25,
-            'max_temperature': 55.0,
-            'min_power': 600,
-            'min_start_duration': 10,
-            'min_battery_soc': 0,
-        }
+        # Im Schema optional: fehlt die Option, meldet sich die App ohne
+        # Benutzer am Broker an
+        self.mqtt_user = opts.get('mqtt_user')
+        self.mqtt_password = opts.get('mqtt_password')
+
+        try:
+            self.ha_token = os.environ['SUPERVISOR_TOKEN']
+        except KeyError:
+            sys.exit("SUPERVISOR_TOKEN fehlt – "
+                     "läuft das Programm ausserhalb von Home Assistant?")

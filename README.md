@@ -38,7 +38,7 @@ Version.
 | Ordner / App | Kurzbeschreibung | Status / Version |
 | :--- | :--- | :--- |
 | [**`cm4_sys_monitor`**](./cm4_sys_monitor) | Überwachung eines Raspberry Pi Compute Module 4 auf dem Waveshare CM4-POE-UPS-BASE. Liest Akkuspannung und -strom über den INA219, steuert den Lüfter temperaturabhängig über den EMC2301 und legt alle Werte per MQTT-Discovery als Entitäten in Home Assistant an. | v2.1.0 (Aktiv) |
-| [**`pv_wp_control`**](./pv_wp_control) | PV-Überschusssteuerung für eine Alpha-Innotec-Wärmepumpe (Luxtronik 2.1) über Modbus TCP. Startet die Wärmepumpe bei Solarüberschuss, führt die Leistungsbegrenzung dem Überschuss nach, erkennt fremde Starts und Stopps (Warmwasser, Abtauen, EVU-Sperre) und stellt Sensoren und Bedienelemente per MQTT-Discovery bereit. | v1.0.12 (Aktiv) |
+| [**`pv_wp_control`**](./pv_wp_control) | PV-Überschusssteuerung für eine Alpha-Innotec-Wärmepumpe (Luxtronik 2.1) über Modbus TCP. Startet die Wärmepumpe bei Solarüberschuss, führt die Leistungsbegrenzung dem Überschuss nach, erkennt fremde Starts und Stopps (Warmwasser, Abtauen, EVU-Sperre) und stellt Sensoren und Bedienelemente per MQTT-Discovery bereit. | v1.1.0 (Aktiv) |
 
 ---
 

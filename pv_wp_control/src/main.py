@@ -5,12 +5,11 @@ import signal
 import sys
 from datetime import datetime, date
 
-from config import Config
 from logger import get_logger
 from modbus_client import ModbusClient
 from mqtt_handler import MqttHandler
 from ha_client import HAClient
-from state_machine import StateMachine, State
+from state_machine import StateMachine, State, SOFORT_LIMIT_W
 from safety import SafetyMonitor
 from config import Config, VERSION
 
@@ -78,7 +77,7 @@ def main():
                 energy_date = date.today()
                 log.info("Mitternacht: Energiezähler zurückgesetzt")
 
-            # --- Measurement cycle (every 15s) ---
+            # --- Measurement cycle (measurement_interval_s) ---
             if now - last_measurement >= config.measurement_interval_s:
                 last_measurement = now
 
@@ -156,7 +155,7 @@ def main():
                         f"{f' SOC={battery_soc}%' if battery_soc is not None else ''}"
                     )
 
-            # --- Modbus write cycle (every 60s) ---
+            # --- Modbus write cycle (modbus_refresh_s) ---
             if now - last_modbus_write >= config.modbus_refresh_s:
                 last_modbus_write = now
 
@@ -188,7 +187,7 @@ def main():
                                       params['max_temperature'])
 
                         if params['mode'] == 'Sofort':
-                            limit_w = 10000
+                            limit_w = SOFORT_LIMIT_W
                         else:
                             limit_w = max(int(pv_surplus_val),
                                           params['min_power'])

@@ -4,7 +4,7 @@ import json
 import time
 import paho.mqtt.client as mqtt
 
-from config import VERSION
+from config import VERSION, DEFAULT_PARAMS
 from param_store import ParamStore
 
 
@@ -16,20 +16,7 @@ class MqttHandler:
         self.disc_prefix = config.mqtt_discovery_prefix
 
         # Persistenter Parameter-Speicher
-        self._store = ParamStore(config.default_params, log)
-
-        # Parameter-Typen für Validierung
-        self._param_types = {
-            'mode': str,
-            'offset': float,
-            'min_surplus': int,
-            'shutdown_delay': int,
-            'min_standzeit': int,
-            'max_temperature': float,
-            'min_power': int,
-            'min_start_duration': int,
-            'min_battery_soc': int,
-        }
+        self._store = ParamStore(DEFAULT_PARAMS, log)
 
         # MQTT Client
         self.client = mqtt.Client(client_id="pvwp_control")
@@ -76,9 +63,9 @@ class MqttHandler:
         try:
             # Command topic: {prefix}/set/{key}
             key = topic[len(f"{self.prefix}/set/"):]
-            if key in self._param_types:
-                cast = self._param_types[key]
-                value = cast(payload)
+            if key in DEFAULT_PARAMS:
+                # Typ des Parameters aus seinem Startwert
+                value = type(DEFAULT_PARAMS[key])(payload)
                 self._store.set(key, value)
                 self.log.info(f"MQTT Param: {key} = {value}")
 

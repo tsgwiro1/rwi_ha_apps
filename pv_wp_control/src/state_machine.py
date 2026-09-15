@@ -3,6 +3,17 @@
 import time
 from enum import Enum
 
+# Darüber gilt der Verdichter als laufend
+KOMPRESSOR_LAEUFT_KW = 0.3
+# Leistungsgrenze im Modus «Sofort», praktisch unbegrenzt
+SOFORT_LIMIT_W = 10000
+# So lange nach dem Reset wird geprüft, ob der Verdichter steht
+RESET_PRUEFUNG_S = 120
+# Der Cooldown wächst mit jedem Fehlstart bis zu diesem Vielfachen
+MAX_COOLDOWN_FAKTOR = 3
+# So viele Messzyklen in Folge muss der Überschuss zurück sein
+PV_ERHOLT_ZYKLEN = 2
+
 
 class State(Enum):
     AUS = "AUS"
@@ -51,7 +62,7 @@ class StateMachine:
 
         # Start-Hysterese (WARTEN → ANLAUF)
         self._pv_start_time = 0
-        self._min_start_duration_s = 600
+        self._min_start_duration_s = 0  # setzt evaluate() aus den Parametern
 
         # Abregelungs-Tracking (für Zusammenfassung)
         self._abregelung_count = 0
@@ -121,11 +132,11 @@ class StateMachine:
         return elapsed < self._cooldown_s
 
     def _kompressor_running(self, modbus_data):
-        """Prüfe ob Kompressor tatsächlich läuft (>300W)."""
+        """Prüfe ob Kompressor tatsächlich läuft (> KOMPRESSOR_LAEUFT_KW)."""
         if modbus_data is None:
             return False
         leistung_kw = modbus_data.get('leistung_kw', 0)
-        return leistung_kw > 0.3
+        return leistung_kw > KOMPRESSOR_LAEUFT_KW
 
     def _request_reset(self, reason):
         """Reset anfordern – Register müssen zurückgesetzt werden."""
@@ -199,24 +210,24 @@ class StateMachine:
         self._reset_verified = False
 
     def evaluate(self, inputs):
-        """State Machine evaluieren – wird alle 15s aufgerufen."""
+        """State Machine evaluieren – wird in jedem Messzyklus aufgerufen."""
         modbus = inputs.get('modbus')
         pv_surplus = inputs.get('pv_surplus') or 0
         battery_soc = inputs.get('battery_soc')
-        params = inputs.get('params', {})
+        params = inputs['params']
         safety_ok = inputs.get('safety_ok', True)
         safety_msg = inputs.get('safety_msg', '')
         modbus_connected = inputs.get('modbus_connected', False)
 
-        mode = params.get('mode', 'Aus')
-        min_surplus = params.get('min_surplus', 800)
-        max_temp = params.get('max_temperature', 55.0)
-        shutdown_delay = params.get('shutdown_delay', 30)
-        min_standzeit = params.get('min_standzeit', 25)
-        min_power = params.get('min_power', 600)
-        offset = params.get('offset', 5.0)
-        min_start_duration = params.get('min_start_duration', 10)
-        min_battery_soc = params.get('min_battery_soc', 0)
+        mode = params['mode']
+        min_surplus = params['min_surplus']
+        max_temp = params['max_temperature']
+        shutdown_delay = params['shutdown_delay']
+        min_standzeit = params['min_standzeit']
+        min_power = params['min_power']
+        offset = params['offset']
+        min_start_duration = params['min_start_duration']
+        min_battery_soc = params['min_battery_soc']
 
         # Start-Hysterese Dauer in Sekunden
         self._min_start_duration_s = min_start_duration * 60
@@ -224,7 +235,7 @@ class StateMachine:
         # Effective cooldown (max aus technischem und User-Wert)
         base_cooldown = max(self.config.wp_min_standzeit_min,
                             min_standzeit) * 60
-        multiplier = min(self._failed_starts + 1, 3)
+        multiplier = min(self._failed_starts + 1, MAX_COOLDOWN_FAKTOR)
         self._cooldown_s = base_cooldown * multiplier
         self._shutdown_delay_s = shutdown_delay * 60
 
@@ -239,7 +250,7 @@ class StateMachine:
         # ============================================================
         if not self._reset_verified and self._reset_sent_time > 0:
             elapsed = time.time() - self._reset_sent_time
-            if elapsed > 120:
+            if elapsed > RESET_PRUEFUNG_S:
                 if kompressor_laeuft:
                     self.log.warning(
                         f"Reset-Verifizierung: Kompressor läuft noch "
@@ -444,7 +455,7 @@ class StateMachine:
 
                 elif betriebsart in (0, 6):
                     if mode == 'Sofort':
-                        our_limit = 10000
+                        our_limit = SOFORT_LIMIT_W
                     else:
                         our_limit = max(int(pv_surplus), min_power)
 
@@ -527,7 +538,8 @@ class StateMachine:
             elif elapsed > self.config.startup_no_limit_s:
                 self._failed_starts += 1
                 next_cooldown_min = int(
-                    self._cooldown_s * min(self._failed_starts + 1, 3) / 60)
+                    self._cooldown_s * min(self._failed_starts + 1,
+                                           MAX_COOLDOWN_FAKTOR) / 60)
 
                 # Diagnose-Daten
                 wp_sperre = modbus.get(
@@ -585,7 +597,7 @@ class StateMachine:
 
             # Limit nachführen
             if mode == 'Sofort':
-                self.active_limit_w = 10000
+                self.active_limit_w = SOFORT_LIMIT_W
             else:
                 self.active_limit_w = max(int(pv_surplus), min_power)
 
@@ -602,10 +614,10 @@ class StateMachine:
                 self.state = State.ABSCHALT
                 return
 
-            # PV erholt? (mit Hysterese: 2 Zyklen = 30s stabil)
+            # PV erholt? (Hysterese: PV_ERHOLT_ZYKLEN Messzyklen in Folge)
             if pv_surplus >= min_surplus:
                 self._pv_recovered_count += 1
-                if self._pv_recovered_count >= 2:
+                if self._pv_recovered_count >= PV_ERHOLT_ZYKLEN:
                     if self._abregelung_current_start > 0:
                         self._abregelung_total_s += (
                             time.time() - self._abregelung_current_start)

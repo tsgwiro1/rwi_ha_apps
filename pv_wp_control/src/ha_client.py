@@ -3,6 +3,13 @@
 import time
 import requests
 
+from config import HA_URL
+
+# Timeout je Abfrage an die HA-API
+HTTP_TIMEOUT_S = 5
+# Solange HA nicht erreichbar ist, so oft ein Lebenszeichen im Log
+LEBENSZEICHEN_S = 300
+
 
 class HAClient:
     def __init__(self, config, log):
@@ -13,6 +20,7 @@ class HAClient:
         self._last_success = time.time()
         self._consecutive_errors = 0
         self._unavailable_since = None
+        self._last_lebenszeichen = 0
 
     def is_connected(self):
         """Prüfe ob HA-Daten aktuell sind."""
@@ -23,9 +31,11 @@ class HAClient:
     def _handle_api_error(self, context, status_code=None, exception=None):
         """Zentrale Fehlerbehandlung mit Eskalations-Logik."""
         self._consecutive_errors += 1
+        now = time.time()
 
         if self._unavailable_since is None:
-            self._unavailable_since = time.time()
+            self._unavailable_since = now
+            self._last_lebenszeichen = now
 
         if self._consecutive_errors == 1:
             # Erste Meldung als WARNING
@@ -37,9 +47,9 @@ class HAClient:
                 self.log.warning(
                     f"HA nicht erreichbar ({exception}) "
                     f"– warte auf Verfügbarkeit...")
-        elif self._consecutive_errors % 20 == 0:
-            # Alle 5 min (20 × 15s) ein Lebenszeichen
-            elapsed = int((time.time() - self._unavailable_since) / 60)
+        elif now - self._last_lebenszeichen >= LEBENSZEICHEN_S:
+            self._last_lebenszeichen = now
+            elapsed = int((now - self._unavailable_since) / 60)
             self.log.info(
                 f"HA weiterhin nicht erreichbar seit {elapsed} min "
                 f"(Errors: {self._consecutive_errors})")
@@ -63,7 +73,7 @@ class HAClient:
     def get_pv_surplus(self):
         """PV Überschuss aus HA Entity lesen."""
         entity_id = self.config.ha_entity_pv_surplus
-        url = f"{self.config.ha_url}/states/{entity_id}"
+        url = f"{HA_URL}/states/{entity_id}"
 
         headers = {
             'Authorization': f'Bearer {self.config.ha_token}',
@@ -71,7 +81,7 @@ class HAClient:
         }
 
         try:
-            response = requests.get(url, headers=headers, timeout=5)
+            response = requests.get(url, headers=headers, timeout=HTTP_TIMEOUT_S)
 
             if response.status_code == 200:
                 data = response.json()
@@ -108,7 +118,7 @@ class HAClient:
         if not entity_id:
             return None
 
-        url = f"{self.config.ha_url}/states/{entity_id}"
+        url = f"{HA_URL}/states/{entity_id}"
 
         headers = {
             'Authorization': f'Bearer {self.config.ha_token}',
@@ -116,7 +126,7 @@ class HAClient:
         }
 
         try:
-            response = requests.get(url, headers=headers, timeout=5)
+            response = requests.get(url, headers=headers, timeout=HTTP_TIMEOUT_S)
 
             if response.status_code == 200:
                 data = response.json()

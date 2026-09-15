@@ -7,6 +7,26 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-15
+
+### Geändert
+
+- **Optionen aus `/data/options.json`:** Das Programm liest die App-Optionen selbst. `run.sh` übergibt keine Argumente mehr. Fehlt eine Pflichtoption, bricht die App mit einer Meldung ab, die die Option nennt, statt mit einem eigenen Wert zu laufen.
+- `wp_ip` hat keine Vorgabe mehr und muss bei einer neuen Installation gesetzt werden. Bestehende Installationen behalten ihren gespeicherten Wert.
+- `mqtt_user` und `mqtt_password` sind optional, das Passwort ist ein Passwortfeld und wird in der Konfiguration verdeckt angezeigt.
+- Feste Werte stehen je einmal als benannte Konstante: Kompressorschwelle, Grenze im Modus «Sofort», Reset-Prüfung, Cooldown-Faktor, PV-Hysterese, Sicherheits-Hysterese, HTTP-Timeout.
+- Die Dashboard-Parameter haben ihren Startwert nur noch in `DEFAULT_PARAMS`; Zustandsmaschine und MQTT-Handler wiederholen weder Werte noch Typen.
+- Das Lebenszeichen «HA weiterhin nicht erreichbar» richtet sich nach der Zeit statt nach einer Fehlerzahl, die ein Messintervall von 15 s voraussetzte.
+- `translations/` nennen keine Vorgaben mehr.
+
+### Entfernt
+
+- Der Rückfallpfad in `src/config.py` mit eigenen Vorgaben – darunter `startup_no_limit_s` 180 statt 1800 – und das unbenutzte `register_timeout_min`.
+
+### Sicherheit
+
+- Das MQTT-Passwort steht nicht mehr als Argument in der Prozessliste.
+
 ## [1.0.12] - 2026-09-15
 
 ### Behoben
@@ -183,7 +203,8 @@ Datum nicht überliefert.
 
 - Initiale Version.
 
-[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/pv_wp_control/v1.0.12...HEAD
+[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/pv_wp_control/v1.1.0...HEAD
+[1.1.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.1.0
 [1.0.12]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.0.12
 [1.0.11]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.0.11
 [1.0.10]: https://github.com/tsgwiro1/rwi_ha_apps/tree/pv_wp_control/v1.0.10
