@@ -1,7 +1,7 @@
 # CM4 System Monitor für Home Assistant
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version: 2.0.4](https://img.shields.io/badge/Version-2.0.4-blue.svg)](CHANGELOG.md)
+[![Version: 2.1.0](https://img.shields.io/badge/Version-2.1.0-blue.svg)](CHANGELOG.md)
 
 Dieses Home Assistant Add-on überwacht die Hardware eines Raspberry Pi Compute Module 4 (CM4) in Kombination mit einem IO-Board (z. B. Waveshare CM4-POE-UPS-BASE). Es liest Sensordaten via I2C aus, steuert den Lüfter intelligent und sendet alle relevanten Statusdaten (Batteriespannung, Strom, Lüfter-RPM) per MQTT an Home Assistant.
 
@@ -11,7 +11,7 @@ Dank MQTT Auto-Discovery werden alle Sensoren in Home Assistant automatisch als 
 
 - **USV Überwachung:** Auslesen des INA219 Chips für Batteriespannung (V), aktuellen Stromverbrauch (mA) und errechneten Batteriestand (%).
 - **Intelligente Lüftersteuerung:** Automatische, stufenlose Anpassung der Geschwindigkeit (EMC2301 Chip). Inklusive intelligenter Kickstart-Funktion (nur bei Stillstand) und konfigurierbarer Hysterese, um ständiges Ein- und Ausschalten zu verhindern.
-- **Ressourcenschonend:** Komplett natives Alpine-Linux Docker Image mit direkter I2C-Ansprache via `smbus` (ohne teure Subprozesse).
+- **Ressourcenschonend:** Schlankes Alpine-Linux Docker Image mit direkter I2C-Ansprache via `smbus2` (ohne Subprozesse).
 - **Home Assistant UI:** Alle Sensoren und Parameter können bequem über die Add-on Optionen konfiguriert werden.
 
 ## 🛠️ Voraussetzungen
@@ -40,13 +40,12 @@ Nach der Installation musst du das Add-on im Reiter **Konfiguration** anpassen. 
 | `username` | String | Der Benutzername für den MQTT Broker. |
 | `password` | String | Das Passwort für den MQTT Broker. |
 | `devicename` | String | Interner Name für das MQTT Gerät. |
-| `clientid` | String | Eindeutige MQTT Client ID (optional). |
+| `clientid` | String | Eindeutige MQTT Client ID (optional, leer = zufällige ID). |
 | `fanmintemp` | Integer | CPU Temp (°C), ab der der Lüfter mit Mindestlast anläuft. |
 | `fanmaxtemp` | Integer | CPU Temp (°C), bei der der Lüfter auf 100% dreht. |
 | `interval` | Integer | Zeit in Sekunden zwischen den Sensor-Updates. |
 | `bat_v`, `bat_percent`... | Boolean | Schalter zum Aktivieren/Deaktivieren einzelner Sensoren. |
 | `log_level` | Dropdown | Detailgrad der Protokolle. `info` für Normalbetrieb, `debug` für detaillierte Fehlersuche und Live-Analyse. |
-| `low_bat_warning` | Float | Spannung (V), ab der eine Batteriewarnung ins Protokoll geschrieben wird. |
 | `fan_hysteresis` | Float | Pufferzone in °C. Verhindert, dass der Lüfter an der Temperaturgrenze ständig an- und ausgeht. |
 
 Speichere die Konfiguration, aktiviere "Beim Booten starten" (Start on boot) sowie "Watchdog" und starte das Add-on!

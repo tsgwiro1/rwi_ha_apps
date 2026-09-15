@@ -1,17 +1,15 @@
 ARG BUILD_ARCH
-FROM ghcr.io/home-assistant/${BUILD_ARCH}-base:latest
+FROM ghcr.io/home-assistant/${BUILD_ARCH}-base:3.24
 
-# Alles nativ über Alpine Linux installieren
-RUN apk add --no-cache \
-    python3 \
-    py3-paho-mqtt \
-    py3-yaml \
-    py3-smbus
+RUN apk add --no-cache python3
+
+# Python-Abhängigkeiten in eigener Umgebung, Versionen in requirements.txt
+COPY requirements.txt /app/
+RUN python3 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir -r /app/requirements.txt
 
 # Skripte kopieren
-COPY usv_status.py /
-COPY fan.py /
-COPY system_sensors.py /
+COPY usv_status.py fan.py system_sensors.py /app/
 COPY run.sh /
 RUN chmod a+x /run.sh
 

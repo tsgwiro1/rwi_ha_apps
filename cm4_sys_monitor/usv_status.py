@@ -1,4 +1,9 @@
-import smbus
+# Treiber für den INA219, der den Akku des Waveshare CM4-POE-UPS-BASE misst.
+#
+# Herkunft: Kalibrierung, Strom-LSB und Umrechnung stammen aus der INA219-Demo
+# von Waveshare zum Board, https://www.waveshare.com/wiki/CM4-POE-UPS-BASE
+
+from smbus2 import SMBus
 import logging
 
 logger = logging.getLogger("usv_driver")
@@ -19,15 +24,14 @@ CONFIG = (0x0 << 13) | (0x1 << 11) | (0xD << 7) | (0xD << 3) | 0x7  # = 0x0EEF
 
 
 class INA219:
-    def __init__(self, bus, addr, low_bat_warning):
+    def __init__(self, bus, addr):
         self.addr = addr
-        self.low_bat_warning = low_bat_warning
         try:
-            self.bus = smbus.SMBus(bus)
+            self.bus = SMBus(bus)
             self._write(REG_CALIBRATION, CALIBRATION)
             self._write(REG_CONFIG, CONFIG)
             logger.info(f"INA219 initialisiert (Kalibrierung: {self._read(REG_CALIBRATION):#06x}, "
-                        f"Konfiguration: {self._read(REG_CONFIG):#06x}, Warnschwelle: {self.low_bat_warning}V)")
+                        f"Konfiguration: {self._read(REG_CONFIG):#06x})")
         except Exception as e:
             logger.error(f"Fehler bei der Initialisierung des INA219: {e}")
             self.bus = None
@@ -55,12 +59,7 @@ class INA219:
         try:
             self._ensure_calibration()
             # Die Spannung steht in den oberen 13 Bits
-            voltage = (self._read(REG_BUSVOLTAGE) >> 3) * BUS_VOLTAGE_LSB_V
-
-            if voltage < self.low_bat_warning:
-                logger.warning(f"Kritische Batteriespannung detektiert: {voltage:.3f}V! (Schwelle: {self.low_bat_warning}V)")
-
-            return voltage
+            return (self._read(REG_BUSVOLTAGE) >> 3) * BUS_VOLTAGE_LSB_V
         except Exception as e:
             logger.error(f"Fehler beim Auslesen der Bus-Spannung: {e}")
             return None

@@ -319,3 +319,73 @@ statt auf `4.1` stehen zu bleiben. Mit v2.0.3 wären es 1280–1710 mA gewesen.
 **Noch offen:** Die Punkte aus «Projektstand gegenüber system_sensor» (Doku,
 Abhängigkeiten, Herkunft, Verfügbarkeit) folgen in V2.1.0 und einem
 Doku-Commit.
+
+---
+
+## 2026-09-15, 17:55 – Entscheidungen für V2.1.0 (App-Chat, Roger)
+
+Aus der Gesamtanalyse vom selben Tag, Phase 2:
+
+1. **Abhängigkeiten:** venv mit pip, jede Abhängigkeit auf ihre Hauptversion
+   begrenzt (`paho-mqtt>=2.1,<3`, `smbus2`), wie system_sensor. Der Code wird
+   auf paho 2 mit Callback-API Version 2 umgestellt. Heute liefert das
+   Base-Image paho 1.6.1 unter Alpine 3.23.3.
+2. **Lüfter beim Beenden der App:** auf 100 % setzen.
+3. **`low_bat_warning`:** offen, Erklärung angefragt.
+4. **`cpu_temp`:** eigene Entität mit `state_class: measurement`.
+5. **Herkunft `fan.py`:** Roger hält den Code für eigenen. Die Hinweise auf
+   einen «Original-Code» stammen aus der ersten Fassung (d6f268c) und meinen
+   vermutlich die eigenen Skripte von 1.2.31. Noch zu bestätigen.
+
+Übrige Punkte für V2.1.0 laut Analyse:
+- Optionen aus `/data/options.json` statt 16 Argumenten. Heute steht das
+  Passwort in `ps`, und die Client-ID heisst `null`.
+- Verfügbarkeit mit Last Will; Discovery erneut senden, wenn HA neu startet.
+- `sw_version`, `default_entity_id`, abgeschaltete Sensoren aus HA entfernen.
+- `translations/de.yaml`; Base-Image festlegen; `config.yaml` bereinigen
+  (`device_tree`, `/dev/i2c-1`, `amd64`, `SYS_ADMIN` nur mit Test).
+
+**Nachtrag 18:40 – entschieden (Roger):**
+- **Zu 3, `low_bat_warning`:** Option und Warnung werden entfernt. Die Grenze für
+  den Akkubetrieb steht nur in HA (`input_number.usv_abschalten_unter`).
+- **Zu 4, `cpu_temp`:** doch weglassen, auch in der Nutzlast. Die CPU-Temperatur
+  liefert die Integration System Monitor (`sensor.processor_temperature`), die
+  App liefert nichts doppelt.
+- **Zu 5, Herkunft:** `fan.py` ist eigener Code. `usv_status.py` bekommt einen
+  Herkunftshinweis auf die INA219-Demo von Waveshare. Woher die alten Skripte
+  von 1.2.31 im Einzelnen stammen, lässt sich nicht mehr nachvollziehen.
+
+---
+
+## 2026-09-15, 18:50 – V2.1.0 eingespielt und geprüft (App-Chat)
+
+Neubau um 18:43, HA auf Akku seit 17:27.
+
+| Prüfung | Ergebnis |
+| :--- | :--- |
+| Image, Pakete | Alpine 3.24.1, paho-mqtt 2.1.0, smbus2 0.6.1 im venv |
+| Ohne `SYS_ADMIN` | Container nicht privilegiert, keine zusätzlichen Rechte; I2C funktioniert (Kalibrierung `0x68F4`, Konfiguration `0x0EEF`) |
+| Prozessliste | `python3 /app/system_sensors.py` ohne Argumente, kein Passwort |
+| `low_bat_warning` | Supervisor: «Option 'low_bat_warning' does not exist in the schema», verworfen; die App startet |
+| Gerät in HA | Firmware 2.1.0; Name und Entitätsnamen aus HA unverändert |
+| Übersetzungen | de und en geladen |
+| Stopp um 18:43:50 | Log «Monitor wird beendet» und «Lüfter auf 100%»; EMC2301-Register 255, 8292 rpm; 4 Entitäten `unavailable`, `sensor.ha_usv_zustand` `unknown` |
+| Start um 18:44:25 | Werte wieder da, USV `Akku`; Lüfter regelt über 3 Min. (Register 61→53 bei 45,8–46,3 °C) |
+| Abschaltautomation | Auslöser `akku` um 18:45:25, `failed_conditions` (Ladestand 85 %) |
+
+**Offen – kurzes Flackern beim Update:** Um 18:43:13 gingen die Entitäten für
+etwa 30 ms auf `unavailable` und `sensor.ha_usv_zustand` auf `unknown`.
+Ursache: `on_connect` sendet zuerst die Discovery, die jetzt ein
+`availability_topic` enthält, und erst danach `online`. Das tritt nur auf, wenn
+sich die Discovery ändert, also bei einem Update, nicht bei einem gewöhnlichen
+Neustart. Behebung: `online` vor der Discovery senden.
+
+**Nachtrag 19:00 – Flackern behoben:** `on_connect` sendet jetzt zuerst
+`online`, dann die Discovery. Eingespielt als Neubau von 2.1.0 um 18:56. Beim
+Stopp um 18:56:46 lief der Lüfter auf 100 %, und die Entitäten gingen
+`unavailable`. Beim Start um 18:56:53 kamen die Werte direkt zurück, ohne
+Zwischenstand. Der eigentliche Fall, eine geänderte Discovery, liess sich dabei
+nicht nachstellen, weil die Discovery gleich blieb. Die Reihenfolge ist im
+Offline-Test geprüft. Die Update-Anzeige in HA stand nach dem Update auf 2.1.0
+auf «2.0.4 installiert». Das lag an HA Core, nicht an der App: Der Supervisor
+meldete durchgehend 2.1.0. Um 19:00 zeigte HA wieder richtig `off`, 2.1.0.

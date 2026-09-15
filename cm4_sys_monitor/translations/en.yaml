@@ -1,0 +1,46 @@
+configuration:
+  hostname:
+    name: MQTT broker
+    description: IP address or hostname of the MQTT broker
+  port:
+    name: MQTT port
+    description: Port of the MQTT broker
+  username:
+    name: MQTT username
+    description: Username for the MQTT broker
+  password:
+    name: MQTT password
+    description: Password for the MQTT broker
+  clientid:
+    name: MQTT client ID
+    description: Optional. Leave empty to use a random ID for each connection.
+  devicename:
+    name: Device name
+    description: Name of the device in Home Assistant. Part of unique_ids and topics – do not change after setup.
+  interval:
+    name: Interval
+    description: Seconds between two measurements
+  fanmintemp:
+    name: Fan on from
+    description: CPU temperature in °C at which the fan starts at minimum load
+  fanmaxtemp:
+    name: Fan full from
+    description: CPU temperature in °C at which the fan runs at full speed
+  fan_hysteresis:
+    name: Fan hysteresis
+    description: The fan switches off this many °C below "Fan on from"
+  bat_v:
+    name: Battery voltage
+    description: Send the battery voltage sensor
+  bat_percent:
+    name: Battery level
+    description: Send the battery level sensor
+  bat_curr:
+    name: Battery current
+    description: Send the battery current sensor
+  fan_speed:
+    name: Fan speed
+    description: Send the fan speed sensor
+  log_level:
+    name: Log level
+    description: info for normal operation, debug for troubleshooting

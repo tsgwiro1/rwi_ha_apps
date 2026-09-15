@@ -2,6 +2,37 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [2.1.0] - 2026-09-15
+
+### Hinzugefügt
+
+- **Verfügbarkeit:** Die App meldet `online` und `offline` auf `system-sensors/sensor/<gerät>/availability`, mit Last Will beim Broker. Steht die App, zeigen ihre Entitäten in Home Assistant «nicht verfügbar» statt der letzten Werte.
+- **Discovery nach einem Neustart von Home Assistant:** Meldet Home Assistant `online` auf `homeassistant/status`, sendet die App die Discovery erneut.
+- **Firmware-Version auf der Geräteseite** (`sw_version`).
+- **Feste Entity-IDs für neue Installationen** (`default_entity_id`). Bestehende Entitäten behalten ihre ID.
+- **Abgeschaltete Sensoren verschwinden aus Home Assistant:** Die App sendet dafür eine leere retained Discovery-Nachricht.
+- **Beschriftungen der Optionen** auf Deutsch und Englisch (`translations/`).
+- **Lüfter läuft voll**, wenn die App beendet wird oder die CPU-Temperatur nicht lesbar ist.
+
+### Geändert
+
+- **Optionen:** Das Programm liest die Optionen selbst aus `/data/options.json`. `run.sh` übergibt keine 16 Argumente mehr, und das MQTT-Passwort steht nicht mehr in der Prozessliste.
+- **Abhängigkeiten:** paho-mqtt 2 (Callback-API Version 2) und smbus2 laufen in einer eigenen Python-Umgebung, jede auf ihre Hauptversion begrenzt (`requirements.txt`). Bisher kamen Alpine-Pakete ohne feste Version, darunter paho-mqtt 1.6.1.
+- **Base-Image** fest auf Alpine 3.24 statt `latest`.
+- **Verbindung zum Broker im Hintergrund:** Ist der Broker beim Start nicht erreichbar, versucht es die App weiter, und der Lüfter wird unterdessen trotzdem geregelt.
+- Herkunftshinweis in `usv_status.py` (INA219-Demo von Waveshare).
+
+### Entfernt
+
+- **Option `low_bat_warning`** samt der Warnung im Log. Sie griff nie, weil Home Assistant schon bei 3,3 V (25 %) herunterfährt. Beim Update verwirft Home Assistant die gespeicherte Option mit einer Warnung.
+- **`cpu_temp` aus der Nutzlast.** Der Wert hatte keine Entität und wurde in Home Assistant nicht verwendet. Die CPU-Temperatur liefert die Integration System Monitor.
+- Aus der `config.yaml`: Architektur `amd64`, Gerät `/dev/i2c-1`, das Recht `SYS_ADMIN` sowie die ungültigen Schlüssel `device_tree` und `log_level`.
+
+### Behoben
+
+- **Client-ID beim Broker:** War `clientid` leer, meldete sich die App als `null`.
+- **Broker beim Start nicht erreichbar:** Die App brach dann ab, und der Lüfter blieb ungeregelt.
+
 ## [2.0.4] - 2026-09-15
 
 ### Geändert
@@ -67,4 +98,5 @@ Entity-IDs, `unique_id`s und die Schlüssel der MQTT-Nutzlast sind unverändert.
 ## [1.2.31] - Ältere Version
 - Initiale Version (Lokales Add-on basierend auf separaten Skripten).
 
+[2.1.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/cm4_sys_monitor/v2.1.0
 [2.0.4]: https://github.com/tsgwiro1/rwi_ha_apps/tree/cm4_sys_monitor/v2.0.4

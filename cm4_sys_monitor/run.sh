@@ -1,29 +1,10 @@
 #!/usr/bin/with-contenv bashio
 
-HOST=$(bashio::config 'hostname')
-PORT=$(bashio::config 'port')
-USER=$(bashio::config 'username')
-PWD=$(bashio::config 'password')
-INTERVAL=$(bashio::config 'interval')
-DEVICENAME=$(bashio::config 'devicename')
-CLIENTID=$(bashio::config 'clientid')
-FANMINTEMP=$(bashio::config 'fanmintemp')
-FANMAXTEMP=$(bashio::config 'fanmaxtemp')
+APP_VERSION=$(bashio::addon.version)
+export APP_VERSION
 
-# Neue Sensor-Optionen auslesen
-BAT_V=$(bashio::config 'bat_v')
-BAT_P=$(bashio::config 'bat_percent')
-BAT_C=$(bashio::config 'bat_curr')
-FAN_S=$(bashio::config 'fan_speed')
-LOG_LEVEL=$(bashio::config 'log_level')
-LOW_BAT_WARNING=$(bashio::config 'low_bat_warning')
-FAN_HYSTERESIS=$(bashio::config 'fan_hysteresis')
+bashio::log.info "Starte CM4 System Monitor v${APP_VERSION}..."
 
-bashio::log.info "Starte CM4 System Monitor v$(bashio::addon.version)..."
-
-# Starte das Python-Skript mit allen Parametern
-python3 system_sensors.py \
-    "$HOST" "$PORT" "$USER" "$PWD" "$DEVICENAME" "$CLIENTID" \
-    "$FANMINTEMP" "$FANMAXTEMP" "$INTERVAL" \
-    "$BAT_V" "$BAT_P" "$BAT_C" "$FAN_S" \
-    "$LOG_LEVEL" "$LOW_BAT_WARNING" "$FAN_HYSTERESIS"
+# Die Optionen liest das Programm selbst aus /data/options.json.
+# exec, damit das Signal beim Stoppen direkt beim Programm ankommt.
+exec /opt/venv/bin/python3 /app/system_sensors.py

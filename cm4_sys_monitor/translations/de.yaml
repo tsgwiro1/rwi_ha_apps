@@ -1,0 +1,46 @@
+configuration:
+  hostname:
+    name: MQTT-Broker
+    description: IP-Adresse oder Hostname des MQTT-Brokers
+  port:
+    name: MQTT-Port
+    description: Port des MQTT-Brokers
+  username:
+    name: MQTT-Benutzername
+    description: Benutzername für den MQTT-Broker
+  password:
+    name: MQTT-Passwort
+    description: Passwort für den MQTT-Broker
+  clientid:
+    name: MQTT-Client-ID
+    description: Optional. Leer lassen, dann wählt die App bei jeder Verbindung eine zufällige ID.
+  devicename:
+    name: Gerätename
+    description: Name des Geräts in Home Assistant. Geht in unique_ids und Topics ein – nach der Einrichtung nicht mehr ändern.
+  interval:
+    name: Intervall
+    description: Sekunden zwischen zwei Messungen
+  fanmintemp:
+    name: Lüfter ab
+    description: CPU-Temperatur in °C, ab der der Lüfter mit Mindestlast anläuft
+  fanmaxtemp:
+    name: Lüfter voll ab
+    description: CPU-Temperatur in °C, ab der der Lüfter voll läuft
+  fan_hysteresis:
+    name: Lüfter-Hysterese
+    description: So viele °C unter «Lüfter ab» schaltet der Lüfter wieder ab
+  bat_v:
+    name: Akkuspannung
+    description: Sensor für die Akkuspannung senden
+  bat_percent:
+    name: Ladestand
+    description: Sensor für den Ladestand senden
+  bat_curr:
+    name: Akkustrom
+    description: Sensor für den Akkustrom senden
+  fan_speed:
+    name: Lüfterdrehzahl
+    description: Sensor für die Lüfterdrehzahl senden
+  log_level:
+    name: Log-Stufe
+    description: info für den Betrieb, debug für die Fehlersuche
