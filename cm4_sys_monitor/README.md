@@ -1,7 +1,7 @@
 # CM4 System Monitor
 
-[![Version: 2.1.0](https://img.shields.io/badge/Version-2.1.0-blue.svg)](CHANGELOG.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
+[![Version: 2.1.1](https://img.shields.io/badge/Version-2.1.1-blue.svg)](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/cm4_sys_monitor/CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/LICENSE)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-App-41bdf5?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 
 > Regelt den Lüfter und meldet Akkuspannung, Ladestand, Akkustrom und
@@ -111,11 +111,11 @@ Voraussetzungen: Home Assistant OS auf dem CM4 mit diesem Board, der I²C-Bus al
 `/dev/i2c-10`, ein MQTT-Broker und die MQTT-Integration in Home Assistant.
 
 1. Dieses Repository in Home Assistant hinzufügen, wie im
-   [Repository-README](../README.md#repository-in-home-assistant-hinzufügen)
+   [Repository-README](https://github.com/tsgwiro1/rwi_ha_apps#repository-in-home-assistant-hinzufügen)
    beschrieben. Alternativ den Ordner nach `/addons/cm4_sys_monitor/` kopieren;
    die App erscheint dann unter den lokalen Apps.
 2. **CM4 System Monitor** installieren und im Reiter **Konfiguration** Broker,
-   Benutzername und Passwort eintragen. Alle Optionen erklärt [DOCS.md](DOCS.md).
+   Benutzername und Passwort eintragen. Alle Optionen erklärt [DOCS.md](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/cm4_sys_monitor/DOCS.md).
 3. Starten. Im Log erscheinen `INA219 initialisiert (Kalibrierung: 0x68f4, …)`
    und `MQTT verbunden`.
 4. **Beim Booten starten** und **Watchdog** einschalten.
@@ -137,16 +137,16 @@ Jeder lässt sich einzeln abschalten und verschwindet dann aus Home Assistant.
 
 | Datei | Inhalt |
 | :--- | :--- |
-| [DOCS.md](DOCS.md) | Optionen, Lüfterregelung, MQTT und Entitäten, Genauigkeit der Akkuwerte, Datenlast, Fehlerbehebung, bekannte Punkte, Herkunft. In Home Assistant im Reiter **Dokumentation**. |
-| [CHANGELOG.md](CHANGELOG.md) | Was sich je Version geändert hat, und warum |
+| [DOCS.md](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/cm4_sys_monitor/DOCS.md) | Optionen, Lüfterregelung, MQTT und Entitäten, Genauigkeit der Akkuwerte, Datenlast, Fehlerbehebung, bekannte Punkte, Herkunft. In Home Assistant im Reiter **Dokumentation**. |
+| [CHANGELOG.md](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/cm4_sys_monitor/CHANGELOG.md) | Was sich je Version geändert hat, und warum |
 
 ## 🧬 Herkunft
 
 Kalibrierung und Umrechnung des INA219 stammen aus der Demo von Waveshare zum
 [CM4-POE-UPS-BASE](https://www.waveshare.com/wiki/CM4-POE-UPS-BASE). Lüfterregelung,
 MQTT-Anbindung und App sind eigener Code. Einzelheiten in
-[DOCS.md](DOCS.md#9-herkunft).
+[DOCS.md](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/cm4_sys_monitor/DOCS.md#9-herkunft).
 
 ## 📄 Lizenz
 
-MIT – siehe [LICENSE](../LICENSE).
+MIT – siehe [LICENSE](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/LICENSE).

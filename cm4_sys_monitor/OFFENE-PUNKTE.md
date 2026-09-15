@@ -410,3 +410,61 @@ Lizenz und Herkunft sowie Versionierung:
 Die Abhängigkeiten und HA/MQTT sind mit V2.1.0 erledigt. Damit ist der ganze
 Abschnitt abgearbeitet. Hinweis: `default_entity_id` wirkt nur für neu angelegte
 Entitäten. Die bestehenden Entity-IDs in HA bleiben, wie gewollt.
+
+---
+
+## 2026-09-15 – aus dem Chat pv_wp_control: Base-Image `base` statt `aarch64-base`
+
+Bei der Plattform-Analyse für `pv_wp_control` gefunden. Kein Fehler, cm4 baut
+und läuft; eine Empfehlung zur Angleichung.
+
+Die HA-Entwicklerdoku (Apps → Configuration) sagt seit Supervisor 2026.04:
+`BUILD_FROM` wird nicht mehr übergeben, `build.yaml` wird nicht mehr gelesen,
+Base-Images direkt per `FROM` setzen, und zwar das Multi-Arch-Image
+`ghcr.io/home-assistant/base` mit festem Tag. cm4 nutzt
+`ghcr.io/home-assistant/aarch64-base:3.24` mit `ARG BUILD_ARCH`.
+
+- Auf GHCR gibt es für beide Images dieselben Tags (`3.24`, `3.24-2026.06.0`,
+  `3.24-2026.06.1`, `3.24-2026.08.0`); das gebaute cm4-Image trägt
+  `io.hass.base.version=2026.08.0`, `alpine:3.24`.
+- Umstellung: `FROM ghcr.io/home-assistant/base:3.24`, `ARG BUILD_ARCH`
+  streichen. Inhaltlich dasselbe Image, also Patch-Version.
+- `pv_wp_control` stellt in V1.3.0 genau so um (Dockerfile dort als Vergleich).
+
+## 2026-09-15 – aus dem Chat pv_wp_control: relative Links in README/DOCS brechen in HA
+
+Bei `pv_wp_control` im HA-Systemlog gefunden:
+`Failed to to call /addons/LICENSE/info - App LICENSE does not exist`.
+HA zeigt README bzw. DOCS im Reiter der App und behandelt relative Links als
+App-Seiten – ein Klick auf `../LICENSE` ruft `/addons/LICENSE/info` auf.
+`pv_wp_control` hat in V1.3.0 auf absolute GitHub-Links umgestellt
+(`https://github.com/tsgwiro1/rwi_ha_apps/blob/main/…`).
+
+In cm4 betroffen (Stand 2026-09-15):
+
+- `README.md` Z. 3 und 141: `CHANGELOG.md`
+- `README.md` Z. 4 und 152: `../LICENSE`
+- `README.md` Z. 114: `../README.md#repository-in-home-assistant-hinzufügen`
+- `README.md` Z. 118, 140: `DOCS.md`; Z. 148: `DOCS.md#9-herkunft`
+- `DOCS.md` Z. 5: `README.md`; Z. 44: `config.yaml`
+
+Reine Doku, Version bleibt.
+
+---
+
+## 2026-09-15 21:05 – Notiz cm4-Chat: beide Aufträge mit V2.1.1 erledigt
+
+- **Base-Image:** `FROM ghcr.io/home-assistant/base:3.24`, ohne `ARG BUILD_ARCH`.
+  Das gebaute Image trägt `alpine:3.24`, `io.hass.base.version=2026.08.0`,
+  Alpine 3.24.1, paho-mqtt 2.1.0, smbus2 0.6.1 – wie unter 2.1.0.
+- **Links:** Alle Links auf andere Dateien in README und DOCS zeigen auf GitHub
+  (`blob/main`). Anker innerhalb derselben Seite bleiben relativ, wie bei
+  `pv_wp_control`. Im Reiter der App geprüft.
+- Die Links sind mit in V2.1.1 statt in einem eigenen Doku-Commit, weil das
+  Badge ohnehin die neue Version bekam.
+- **Test auf HA:** Update auf 2.1.1, Log sauber (INA219 `0x68f4`/`0x0eef`, MQTT
+  verbunden), vier Entitäten mit Werten, Lüfter regelt nach dem Start
+  (46,7 °C → Register 86). Die erste Drehzahl nach dem Update zeigt noch
+  Volllast vom Stoppen (8273 rpm), die nächste 3070 rpm.
+- Wie bei 2.1.0 hing die Update-Entität in HA Core nach dem Update noch auf der
+  alten Version, der Supervisor meldete bereits 2.1.1.

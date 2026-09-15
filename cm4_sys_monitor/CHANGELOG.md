@@ -7,6 +7,16 @@ Versionen folgen [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-09-15
+
+### Geändert
+
+- **Base-Image** `ghcr.io/home-assistant/base:3.24` statt `aarch64-base:3.24`. Seit Supervisor 2026.04 empfiehlt HA das Multi-Arch-Image mit festem Tag im `FROM`, ohne `BUILD_ARCH`. Inhaltlich dasselbe Image.
+
+### Behoben
+
+- **Links im Reiter der App:** Home Assistant behandelt relative Links in README und DOCS als App-Seiten, ein Klick auf `../LICENSE` rief `/addons/LICENSE/info` auf. Links auf andere Dateien zeigen jetzt auf GitHub.
+
 ## [2.1.0] - 2026-09-15
 
 ### Hinzugefügt
@@ -119,7 +129,8 @@ Datum nicht überliefert.
 
 - Initiale Version (Lokales Add-on basierend auf separaten Skripten).
 
-[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/cm4_sys_monitor/v2.1.0...HEAD
+[Unreleased]: https://github.com/tsgwiro1/rwi_ha_apps/compare/cm4_sys_monitor/v2.1.1...HEAD
+[2.1.1]: https://github.com/tsgwiro1/rwi_ha_apps/tree/cm4_sys_monitor/v2.1.1
 [2.1.0]: https://github.com/tsgwiro1/rwi_ha_apps/tree/cm4_sys_monitor/v2.1.0
 [2.0.4]: https://github.com/tsgwiro1/rwi_ha_apps/tree/cm4_sys_monitor/v2.0.4
 [2.0.3]: https://github.com/tsgwiro1/rwi_ha_apps/tree/cm4_sys_monitor/v2.0.3

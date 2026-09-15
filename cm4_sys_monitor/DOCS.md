@@ -2,7 +2,7 @@
 
 Was die App tut, wie sie einzurichten ist und worauf man sich bei den Werten
 verlassen kann. Überblick, Haftung und Installation stehen im
-[README](README.md).
+[README](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/cm4_sys_monitor/README.md).
 
 In diesem Dokument steht `<devicename>` für die Option `devicename` und
 `<gerät>` für denselben Namen, kleingeschrieben und ohne Leerzeichen.
@@ -41,7 +41,7 @@ In diesem Dokument steht `<devicename>` für die Option `devicename` und
 
 ## 2. Optionen
 
-Vorgabewerte und erlaubte Bereiche stehen in der [`config.yaml`](config.yaml)
+Vorgabewerte und erlaubte Bereiche stehen in der [`config.yaml`](https://github.com/tsgwiro1/rwi_ha_apps/blob/main/cm4_sys_monitor/config.yaml)
 und erscheinen im Reiter **Konfiguration**.
 
 | Gruppe | Option | Bedeutung |
